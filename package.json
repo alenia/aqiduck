@@ -1,0 +1,16 @@
+{
+  "name": "aqiduct",
+  "version": "0.1.0",
+  "description": "Air quality and temperature aggregator and reporter",
+  "main": "index.js",
+  "author": "Daniela Wellisz",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^26.4.2"
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}
