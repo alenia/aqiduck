@@ -16,10 +16,23 @@ let reportData = ({AQI, temperature}, prefix) => {
   }
   return output
 }
+
 aggregator.report = function() {
   return reportData(this.outdoorSensor.getData(), "Outdoor") +
     '\n' +
     reportData(this.indoorSensor.getData(), "Indoor");
-}
+};
+
+aggregator.shouldOpenWindow = function(thresholds) {
+  let outdoorSensorData = this.outdoorSensor.getData();
+  let indoorSensorData = this.indoorSensor.getData();
+  if(
+    indoorSensorData.temperature < thresholds.lowTemperature ||
+    outdoorSensorData.AQI > thresholds.AQI
+  ) {
+    return false;
+  }
+  return outdoorSensorData.temperature < indoorSensorData.temperature;
+};
 
 module.exports = aggregator;
