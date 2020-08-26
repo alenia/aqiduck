@@ -9,17 +9,16 @@ aggregator.initialize = function({ outdoorSensor, indoorSensor }) {
 let reportData = ({AQI, temperature}, prefix) => {
   let output = "";
   if(AQI) {
-    output += `${prefix} AQI: ${AQI}`;
+    output += `${prefix} AQI: ${AQI}\n`;
   }
   if(temperature) {
-    output += `${prefix} Temperature: ${temperature}`;
+    output += `${prefix} Temperature: ${temperature}\n`;
   }
   return output
 }
 
 aggregator.report = function() {
   return reportData(this.outdoorSensor.getData(), "Outdoor") +
-    '\n' +
     reportData(this.indoorSensor.getData(), "Indoor");
 };
 

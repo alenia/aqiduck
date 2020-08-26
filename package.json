@@ -6,7 +6,9 @@
   "author": "Daniela Wellisz",
   "license": "MIT",
   "private": false,
-  "dependencies": {},
+  "dependencies": {
+    "@slack/web-api": "^5.11.0"
+  },
   "devDependencies": {
     "jest": "^26.4.2"
   },
