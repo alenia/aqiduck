@@ -1,4 +1,4 @@
-const aggregator = require('./aggregator');
+const Aggregator = require('./aggregator');
 
 let outdoorSensorData = {}, indoorSensorData = {};
 
@@ -13,9 +13,11 @@ const indoorSensor = {
   }),
 }
 
+let aggregator;
+
 
 beforeEach(() => {
-  aggregator.initialize({ outdoor: outdoorSensor, indoor: indoorSensor });
+  aggregator = new Aggregator({ outdoor: outdoorSensor, indoor: indoorSensor });
   indoorSensorData = {};
   outdoorSensorData = {};
 })
@@ -52,7 +54,7 @@ describe('.report', () => {
   });
   test("It works without an indoor sensor", async () => {
     expect.assertions(2);
-    aggregator.initialize({ outdoor: outdoorSensor });
+    let smallAggregator = new Aggregator({ outdoor: outdoorSensor });
     indoorSensorData = {
       AQI: 42,
       temperature: 75
@@ -61,7 +63,7 @@ describe('.report', () => {
       AQI: 54,
       temperature: 82
     };
-    let report = await aggregator.report();
+    let report = await smallAggregator.report();
     expect(report).toMatch('Outdoor AQI');
     expect(report).not.toMatch('Indoor');
   });

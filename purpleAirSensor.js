@@ -1,11 +1,13 @@
 const axios = require('axios');
 const calculateAQI = require('./calculateAQI');
 
-const createSensor = (sensorId) => {
-  const sensor = {};
+class PurpleAirSensor {
+  constructor(sensorId) {
+    this.sensorId = sensorId
+  }
 
-  sensor.getData = function() {
-    return axios.get(`https://www.purpleair.com/json?show=${sensorId}`)
+  async getData() {
+    return axios.get(`https://www.purpleair.com/json?show=${this.sensorId}`)
       .then(function (response) {
         let results = response.data.results[0];
         let stats = JSON.parse(results.Stats);
@@ -21,9 +23,7 @@ const createSensor = (sensorId) => {
         // handle error
         console.log(error);
       });
-  };
-
-  return sensor;
+  }
 }
 
-module.exports = createSensor;
+module.exports = PurpleAirSensor;

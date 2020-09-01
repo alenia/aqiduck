@@ -1,11 +1,11 @@
-const createPurpleAirSensor = require('./purpleAirSensor.js');
-const aggregator = require('./aggregator.js');
+const PurpleAirSensor = require('./purpleAirSensor.js');
+const Aggregator = require('./aggregator.js');
 const slackReporter = require('./slackReporter.js');
 const secrets = require('./secrets.json');
 
 const index = async () => {
-  aggregator.initialize({
-    outdoor: createPurpleAirSensor(secrets.PURPLE_AIR_SENSOR_ID)
+  const aggregator = new Aggregator({
+    outdoor: new PurpleAirSensor(secrets.PURPLE_AIR_SENSOR_ID)
   });
 
   slackReporter.subscribe(await aggregator.report());
