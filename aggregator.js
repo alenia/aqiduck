@@ -30,22 +30,4 @@ aggregator.report = async function() {
   return report;
 };
 
-aggregator.shouldOpenWindow = async function(thresholds) {
-  if(!this.sensors.outdoor || !this.sensors.indoor) { 
-    console.log("wrong sensors");
-    return false;
-  }
-
-  // TODO: make the requests silmultaneously
-  let outdoorSensorData = await this.sensors.outdoor.getData();
-  let indoorSensorData = await this.sensors.indoor.getData();
-  if(
-    indoorSensorData.temperature < thresholds.lowTemperature ||
-    outdoorSensorData.AQI > thresholds.AQI
-  ) {
-    return false;
-  }
-  return outdoorSensorData.temperature < indoorSensorData.temperature;
-};
-
 module.exports = aggregator;
