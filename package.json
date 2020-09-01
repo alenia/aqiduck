@@ -1,5 +1,5 @@
 {
-  "name": "aqiduct",
+  "name": "aqiduck",
   "version": "0.1.0",
   "description": "Air quality and temperature aggregator and reporter",
   "main": "index.js",
