@@ -1,4 +1,4 @@
-const pkg = require('./aggregator');
+const aggregator = require('./aggregator');
 
 const outdoorSensor = {
   getData: jest.fn(),
@@ -7,9 +7,9 @@ const indoorSensor = {
   getData: jest.fn(),
 }
 
-const aggregator = pkg.initialize({ outdoorSensor, indoorSensor });
 
 beforeEach(() => {
+  aggregator.initialize({ outdoor: outdoorSensor, indoor: indoorSensor });
   indoorSensor.getData.mockReturnValue({})
   outdoorSensor.getData.mockReturnValue({})
 })
@@ -40,6 +40,20 @@ describe('.report', () => {
     let report = aggregator.report();
     expect(indoorSensor.getData).toHaveBeenCalled();
     expect(report).not.toMatch('Indoor AQI');
+  });
+  test("It works without an indoor sensor", () => {
+    aggregator.initialize({ outdoor: outdoorSensor });
+    indoorSensor.getData.mockReturnValue({
+      AQI: 42,
+      temperature: 75
+    });
+    outdoorSensor.getData.mockReturnValue({
+      AQI: 54,
+      temperature: 82
+    });
+    let report = aggregator.report();
+    expect(report).toMatch('Outdoor AQI');
+    expect(report).not.toMatch('Indoor');
   });
 });
 
