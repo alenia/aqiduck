@@ -8,7 +8,7 @@ const index = async () => {
     outdoor: createPurpleAirSensor(secrets.PURPLE_AIR_SENSOR_ID)
   });
 
-  slackReporter.post(await aggregator.report());
+  slackReporter.subscribe(await aggregator.report());
 };
 
 module.exports = index;
