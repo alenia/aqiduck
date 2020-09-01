@@ -1,56 +1,62 @@
 const aggregator = require('./aggregator');
 
+let outdoorSensorData = {}, indoorSensorData = {};
+
 const outdoorSensor = {
-  getData: jest.fn(),
+  getData: jest.fn(() => {
+    return outdoorSensorData;
+  }),
 }
 const indoorSensor = {
-  getData: jest.fn(),
+  getData: jest.fn(() => {
+    return indoorSensorData;
+  }),
 }
 
 
 beforeEach(() => {
   aggregator.initialize({ outdoor: outdoorSensor, indoor: indoorSensor });
-  indoorSensor.getData.mockReturnValue({})
-  outdoorSensor.getData.mockReturnValue({})
+  indoorSensorData = {};
+  outdoorSensorData = {};
 })
 
 describe('.report', () => {
   test("It lists the indoor AQI and temperature", () => {
-    indoorSensor.getData.mockReturnValue({
+    indoorSensorData = {
       AQI: 42,
       temperature: 75
-    });
+    };
     let report = aggregator.report();
     expect(indoorSensor.getData).toHaveBeenCalled();
     expect(report).toMatch('Indoor AQI: 42');
     expect(report).toMatch('Indoor Temperature: 75');
   });
   test("It lists the outdoor AQI and temperature", () => {
-    outdoorSensor.getData.mockReturnValue({
+    outdoorSensorData = {
       AQI: 54,
       temperature: 82
-    });
+    };
     let report = aggregator.report();
     expect(outdoorSensor.getData).toHaveBeenCalled();
     expect(report).toMatch('Outdoor AQI: 54');
     expect(report).toMatch('Outdoor Temperature: 82');
   });
   test("It does not list the indoor AQI if none provided", () => {
-    indoorSensor.getData.mockReturnValue({})
+    indoorSensorData = {};
     let report = aggregator.report();
     expect(indoorSensor.getData).toHaveBeenCalled();
     expect(report).not.toMatch('Indoor AQI');
   });
   test("It works without an indoor sensor", () => {
     aggregator.initialize({ outdoor: outdoorSensor });
-    indoorSensor.getData.mockReturnValue({
+    indoorSensorData = {
       AQI: 42,
       temperature: 75
-    });
-    outdoorSensor.getData.mockReturnValue({
+    };
+    outdoorSensorData = {
       AQI: 54,
       temperature: 82
-    });
+    };
     let report = aggregator.report();
     expect(report).toMatch('Outdoor AQI');
     expect(report).not.toMatch('Indoor');
@@ -61,13 +67,13 @@ describe(".shouldOpenWindow(thresholds)", () => {
   let thresholds = {};
   describe("when the outdoor temperature is significantly below the indoor temperature", () => {
     beforeEach(() => {
-      indoorSensor.getData.mockReturnValue({
+      indoorSensorData = {
         temperature: 75,
-      });
-      outdoorSensor.getData.mockReturnValue({
+      };
+      outdoorSensorData = {
         temperature: 65,
         AQI: 30,
-      });
+      };
     });
     test("It returns false if the indoor temperature is below the lowTemperature threshold", () => {
       thresholds = {
@@ -99,28 +105,28 @@ describe(".shouldOpenWindow(thresholds)", () => {
       }
     })
     test("It returns false if the outdoor temperature is above the indoor temperature", () => {
-      indoorSensor.getData.mockReturnValue({
+      indoorSensorData = {
         temperature: 75,
-      });
-      outdoorSensor.getData.mockReturnValue({
+      };
+      outdoorSensorData = {
         temperature: 76,
         AQI: 30,
-      });
+      };
       expect(aggregator.shouldOpenWindow(thresholds)).toBe(false);
-      outdoorSensor.getData.mockReturnValue({
+      outdoorSensorData = {
         temperature: 80,
         AQI: 30,
-      });
+      };
       expect(aggregator.shouldOpenWindow(thresholds)).toBe(false);
-      outdoorSensor.getData.mockReturnValue({
+      outdoorSensorData = {
         temperature: 75,
         AQI: 30,
-      });
+      };
       expect(aggregator.shouldOpenWindow(thresholds)).toBe(false);
-      outdoorSensor.getData.mockReturnValue({
+      outdoorSensorData = {
         temperature: 70,
         AQI: 30,
-      });
+      };
       expect(aggregator.shouldOpenWindow(thresholds)).toBe(true);
     });
     test.todo("It returns false if the outdoor temperature is too near the indoor temperature");
