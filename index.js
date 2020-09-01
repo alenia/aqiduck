@@ -2,13 +2,12 @@ const mockSensor = require('./mockSensor.js');
 const aggregator = require('./aggregator.js');
 const slackReporter = require('./slackReporter.js');
 
-const index = () => {
+const index = async () => {
   aggregator.initialize({
-    indoorSensor: mockSensor,
-    outdoorSensor: mockSensor
+    outdoor: mockSensor
   });
 
-  slackReporter.post(aggregator.report());
+  slackReporter.post(await aggregator.report());
 };
 
 module.exports = index;

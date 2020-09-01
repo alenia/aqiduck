@@ -20,21 +20,25 @@ const capitalize = function(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-aggregator.report = function() {
+aggregator.report = async function() {
   let report = ""
+
+  // TODO: make the requests silmultaneously
   for (const [key, value] of Object.entries(this.sensors)) {
-    report += reportData(value.getData(), capitalize(key));
+    report += reportData(await value.getData(), capitalize(key));
   }
   return report;
 };
 
-aggregator.shouldOpenWindow = function(thresholds) {
+aggregator.shouldOpenWindow = async function(thresholds) {
   if(!this.sensors.outdoor || !this.sensors.indoor) { 
     console.log("wrong sensors");
     return false;
   }
-  let outdoorSensorData = this.sensors.outdoor.getData();
-  let indoorSensorData = this.sensors.indoor.getData();
+
+  // TODO: make the requests silmultaneously
+  let outdoorSensorData = await this.sensors.outdoor.getData();
+  let indoorSensorData = await this.sensors.indoor.getData();
   if(
     indoorSensorData.temperature < thresholds.lowTemperature ||
     outdoorSensorData.AQI > thresholds.AQI
