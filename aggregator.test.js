@@ -68,3 +68,21 @@ describe('.report', () => {
     expect(report).not.toMatch('Indoor');
   });
 });
+
+describe('Aggregator.fromConfig', () => {
+  it('Creates an aggregator with sensors based on the configuration in the string', () => {
+    const config = '{"sensors": [{"name": "Quackers", "type": "MockSensor", "id": 12345}, {"name": "Quackwaduck", "type": "PurpleAirSensor", "id": 54321}]}';
+    aggregator = Aggregator.fromConfig(config);
+    expect(aggregator.sensors.length).toEqual(2);
+    expect(aggregator.sensors[0].sensor.constructor.name).toEqual("MockSensor");
+  });
+  it("Doesn't add a sensor if it doesn't recognize type", () => {
+    const config = '{"sensors": [{"name": "Unknown", "type": "Fubara", "id": 12345}, {"name": "Quackwaduck", "type": "PurpleAirSensor", "id": 54321}]}';
+    aggregator = Aggregator.fromConfig(config);
+    expect(aggregator.sensors.length).toEqual(1);
+  });
+  it("Doesn't add blow up too badly if the string is poorly formatted", () => {
+    const config = '{fhgwgads';
+    Aggregator.fromConfig(config);
+  });
+});

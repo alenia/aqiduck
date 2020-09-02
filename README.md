@@ -16,7 +16,12 @@ To set up:
 
 * create a slackbot with the permissions `app_mentions:read`, `channels:read`, `chat:write`
 * invite the slackbot to various channels
-* set the channel topic to include a JSON string about which PurpleAir sensors should be monitored
+* set the channel topic to include a JSON string about which PurpleAir sensors should be monitored, for example:
+```
+Whatever channel topic you want to write
+
+***{"sensors": [{"name": "Sesame Street", "type": "PurpleAir", "id": 12345}]}***
+```
 
 To find your PurpleAir sensor ID:
 

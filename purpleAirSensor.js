@@ -2,8 +2,8 @@ const axios = require('axios');
 const calculateAQI = require('./calculateAQI');
 
 class PurpleAirSensor {
-  constructor(sensorId) {
-    this.sensorId = sensorId
+  constructor({ id }) {
+    this.sensorId = id;
   }
 
   async getData() {
@@ -22,6 +22,7 @@ class PurpleAirSensor {
       .catch(function (error) {
         // handle error
         console.log(error);
+        return { error };
       });
   }
 }
