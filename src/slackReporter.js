@@ -1,5 +1,5 @@
 const { WebClient } = require('@slack/web-api');
-const secrets = require('./secrets.json');
+const secrets = require('../secrets.json');
 const Aggregator = require('./aggregator');
 
 const web = new WebClient(secrets.SLACK_TOKEN);
