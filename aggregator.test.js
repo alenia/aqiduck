@@ -17,7 +17,7 @@ let aggregator;
 
 
 beforeEach(() => {
-  aggregator = new Aggregator({ outdoor: outdoorSensor, indoor: indoorSensor });
+  aggregator = new Aggregator([{ name: "Outdoor", sensor: outdoorSensor}, {name: "Indoor", sensor: indoorSensor}]);
   indoorSensorData = {};
   outdoorSensorData = {};
 })
@@ -54,7 +54,7 @@ describe('.report', () => {
   });
   test("It works without an indoor sensor", async () => {
     expect.assertions(2);
-    let smallAggregator = new Aggregator({ outdoor: outdoorSensor });
+    let smallAggregator = new Aggregator([{ name: "Outdoor", sensor: outdoorSensor }]);
     indoorSensorData = {
       AQI: 42,
       temperature: 75

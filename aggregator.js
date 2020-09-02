@@ -1,7 +1,3 @@
-const capitalize = function(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
 const reportData = function({AQI, temperature}, prefix) {
   let output = "";
   if(AQI) {
@@ -20,13 +16,13 @@ class Aggregator {
   }
 
   async report() {
-    let report = ""
+    const dataReports = this.sensors.map(async (s) => {
+      const data = await s.sensor.getData();
+      return reportData(data, s.name);
+    })
 
-    // TODO: make the requests silmultaneously
-    for (const [key, value] of Object.entries(this.sensors)) {
-      report += reportData(await value.getData(), capitalize(key));
-    }
-    return report;
+    const strs = await Promise.all(dataReports);
+    return strs.join();
   }
 }
 
