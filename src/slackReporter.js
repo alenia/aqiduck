@@ -24,6 +24,12 @@ class SlackReporter {
       return;
     }
 
+    if(process.env.SILENT) {
+      console.log(`Would post to ${this.channel.name}:`);
+      console.log(text);
+      return;
+    }
+
     web.chat.postMessage({
       channel: this.channel.id,
       text,

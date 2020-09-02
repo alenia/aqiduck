@@ -1,7 +1,7 @@
-const slackReporter = require('./slackReporter.js');
+const SlackReporter = require('./slackReporter.js');
 
 const index = async () => {
-  slackReporter.subscribe();
+  SlackReporter.subscribe();
 };
 
 module.exports = index;
