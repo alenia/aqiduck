@@ -4,9 +4,35 @@ const Aggregator = require('./aggregator');
 
 const web = new WebClient(secrets.SLACK_TOKEN);
 
-const reporter = {};
+class SlackReporter {
+  constructor({ aggregator, channel }) {
+    this.channel = channel;
+    this.aggregator = aggregator;
+  }
 
-reporter.subscribeToChannelFromInfo = (channel) => {
+  report() {
+    this.aggregator.report().then((report) => {
+      this.postMessage(report);
+    }).catch((error) => {
+      console.log("error getting aggregator report", this.channel, error)
+    });
+  }
+
+  postMessage(text) {
+    if(typeof(text) !== "string") {
+      console.log("Message not a string, not posting!", text, typeof(text));
+      return;
+    }
+
+    web.chat.postMessage({
+      channel: this.channel.id,
+      text,
+    }).then((s) => { console.log(`Message posted in ${this.channel.name}!`) })
+    .catch((e) => { console.log(`ERROR posting in ${this.channel.name}`, e) });
+  }
+}
+
+SlackReporter.subscribeToChannelFromInfo = (channel) => {
   const topic = channel.topic.value;
   const config = topic.split('***')[1];
   if(!config) {
@@ -14,36 +40,23 @@ reporter.subscribeToChannelFromInfo = (channel) => {
     return;
   }
 
-  aggregator = Aggregator.fromConfig(config);
+  const aggregator = Aggregator.fromConfig(config);
 
-  aggregator.report().then((report) => {
-    reporter.postMessage(channel, report);
-  }).catch((error) => {
-    console.log("error getting aggregator report", config, error)
-  });
+  const reporter = new SlackReporter({ aggregator, channel });
+
+  reporter.report();
+
+  return reporter;
 }
 
-reporter.postMessage = (channel, text) => {
-  if(typeof(text) !== "string") {
-    console.log("Message not a string, not posting!", text, typeof(text));
-    return;
-  }
-
-  web.chat.postMessage({
-    channel: channel.id,
-    text,
-  }).then((s) => { console.log(`Message posted in ${channel.name}!`) })
-  .catch((e) => { console.log(`ERROR posting in ${channel.name}`, e) });
-}
-
-reporter.subscribe = (text) => {
+SlackReporter.subscribe = (text) => {
   (() => {
     web.users.conversations()
     .then(({ channels }) => {
       channels.forEach((c) => {
         web.conversations.info({channel: c.id})
         .then(({ channel }) => {
-          reporter.subscribeToChannelFromInfo(channel)
+          SlackReporter.subscribeToChannelFromInfo(channel)
         }).catch((error) => { console.log('ERROR', error) });
       })
     })
@@ -51,4 +64,4 @@ reporter.subscribe = (text) => {
   })();
 };
 
-module.exports = reporter;
+module.exports = SlackReporter;
