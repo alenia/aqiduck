@@ -1,6 +1,6 @@
 //  https://en.wikipedia.org/wiki/Air_quality_index#Computing_the_AQI
 
-const aqiBreakpoints = require('./aqiBreakpoints');
+const aqiBreakpoints = require('./aqiBreakpoints.json');
 
 const calculateAQI = function(basePM2_5) {
   let breakpoint = aqiBreakpoints.find(b => (

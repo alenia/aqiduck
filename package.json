@@ -2,18 +2,26 @@
   "name": "aqiduck",
   "version": "0.1.0",
   "description": "Air quality and temperature aggregator and reporter",
-  "main": "src/index.js",
+  "main": "dist/src/index.js",
   "author": "Daniela Wellisz",
   "license": "MIT",
   "private": false,
   "dependencies": {
     "@slack/web-api": "^5.11.0",
-    "axios": "^0.20.0"
+    "axios": "^0.20.0",
+    "typescript": "^4.0.2"
   },
   "devDependencies": {
-    "jest": "^26.4.2"
+    "@types/jest": "^26.0.13",
+    "jest": "^26.4.2",
+    "ts-jest": "^26.3.0"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "coverage": "jest --coverage",
+    "build-ts": "tsc",
+    "watch-ts": "tsc -w",
+    "clean-test": "rm -rf dist && mkdir dist && tsc && jest",
+    "clean-run": "rm -rf dist && mkdir dist && tsc && node dist/src/index.js"
   }
 }
