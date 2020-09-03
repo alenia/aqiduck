@@ -21,7 +21,7 @@ class SlackReporter {
     this.aggregator = aggregator;
   }
 
-  report() {
+  report() : void {
     this.aggregator.report().then((report) => {
       this.postMessage(report);
     }).catch((error) => {
@@ -29,7 +29,7 @@ class SlackReporter {
     });
   }
 
-  postMessage(text: any) {
+  postMessage(text: any) : void {
     if(typeof(text) !== "string") {
       console.log("Message not a string, not posting!", text, typeof(text));
       return;
@@ -48,7 +48,7 @@ class SlackReporter {
     .catch((e: any) => { console.log(`ERROR posting in ${this.channel.name}`, e) });
   }
 
-  static subscribeToChannelFromInfo(channel: channel) {
+  static subscribeToChannelFromInfo(channel: channel) : SlackReporter | undefined {
     const topic = channel.topic.value;
     const config = topic.split('***')[1];
     if(!config) {
@@ -65,7 +65,7 @@ class SlackReporter {
     return reporter;
   }
 
-  static subscribe() {
+  static subscribe() : void {
     (() => {
       web.users.conversations()
         .then(({ channels } : { channels: Array<channel> }) => {

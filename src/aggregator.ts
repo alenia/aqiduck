@@ -31,7 +31,7 @@ class Aggregator {
     return this;
   }
 
-  async report() {
+  async report(): Promise<undefined | String> {
     try {
       const dataReports = this.sensors.map(async (s) => {
         try {
@@ -50,7 +50,7 @@ class Aggregator {
     }
   }
 
-  public static fromConfig(configString : string) {
+  public static fromConfig(configString : string): Aggregator | undefined {
     let configJSON;
     try {
       configJSON = JSON.parse(configString);
