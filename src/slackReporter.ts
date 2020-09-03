@@ -21,16 +21,28 @@ interface channelInfoResult extends WebAPICallResult {
   channel: channelWithTopic;
 }
 
+//should this be infered somehow in the static methods? I feel weird about being explicit when it's passed through
+interface reporterConfig {
+  onCreate?: (reporter: SlackReporter) => void;
+}
+
+interface reporterConstructorArgs {
+  aggregator: Aggregator;
+  channel: channelWithTopic;
+  onCreate?: (reporter: SlackReporter) => void;
+}
+
+
 const web = new WebClient(secrets.SLACK_TOKEN);
 
 class SlackReporter {
   channel: channelWithTopic;
   aggregator: Aggregator;
 
-  constructor({ aggregator, channel } : { aggregator: Aggregator, channel: channelWithTopic }) {
+  constructor({ aggregator, channel, onCreate } : reporterConstructorArgs) {
     this.channel = channel;
     this.aggregator = aggregator;
-    this.report();
+    onCreate && onCreate(this);
   }
 
   report() : void {
@@ -62,7 +74,7 @@ class SlackReporter {
   }
 
   //TODO: this method should be private but I want to test it
-  static subscribeToChannelFromInfo(channel: channelWithTopic) : SlackReporter | undefined {
+  static subscribeToChannelFromInfo(channel : channelWithTopic, reporterConfig?: reporterConfig) : SlackReporter | undefined {
     const topic = channel.topic.value;
     const config = topic.split('***')[1];
     if(!config) {
@@ -72,14 +84,14 @@ class SlackReporter {
 
     const aggregator = Aggregator.fromConfig(config);
 
-    return new SlackReporter({ aggregator, channel });
+    return new SlackReporter({ aggregator, channel, ...reporterConfig });
   }
 
-  static async subscribeAll(): Promise<void> {
+  static async subscribeAll(reporterConfig?: reporterConfig): Promise<void> {
     const { channels } = await web.users.conversations() as channelListResult;
     channels.forEach(async (c) => {
       const { channel: channelInfo } = await web.conversations.info({channel: c.id}) as channelInfoResult;
-      return SlackReporter.subscribeToChannelFromInfo(channelInfo);
+      return SlackReporter.subscribeToChannelFromInfo(channelInfo, reporterConfig);
     })
   }
 }
