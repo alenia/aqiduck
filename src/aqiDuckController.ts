@@ -10,10 +10,20 @@ export default class AqiDuckController {
     this.aggregator = aggregator
   }
 
+  report() : void {
+    this.aggregator.report().then((report) => {
+      this.slackReporter.postMessage(report);
+    }).catch((error) => {
+      console.log("error getting aggregator report", this.slackReporter.channel, error)
+    });
+  }
+
   static async subscribeAll() : Promise<void> {
     const reporters = await SlackReporter.subscribeAll();
     reporters.forEach(async (reporterPromise) => {
-      (await reporterPromise).report()
+      const slackReporter = await reporterPromise;
+      const controller = new AqiDuckController({ slackReporter, aggregator: slackReporter.aggregator });
+      controller.report()
     })
   }
 }

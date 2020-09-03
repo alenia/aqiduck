@@ -39,14 +39,6 @@ class SlackReporter {
     this.aggregator = aggregator;
   }
 
-  report() : void {
-    this.aggregator.report().then((report) => {
-      this.postMessage(report);
-    }).catch((error) => {
-      console.log("error getting aggregator report", this.channel, error)
-    });
-  }
-
   postMessage(text: string) : void {
     //TODO: Sometimes I get things that aren't strings from the purpleAir JSON. fix this there instead of type checking
     if(typeof(text) !== "string") {
