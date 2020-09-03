@@ -1,12 +1,15 @@
 const axios = require('axios');
-const calculateAQI = require('./calculateAQI');
+import { Sensor, sensorData } from './interfaces/sensor';
+import calculateAQI from './calculateAQI';
 
-class PurpleAirSensor {
-  constructor({ id }) {
+class PurpleAirSensor implements Sensor {
+  sensorId: number;
+
+  constructor({ id }: { id: number }) {
     this.sensorId = id;
   }
 
-  async getData() {
+  async getData(): Promise<sensorData> {
     let response
     try {
       response = await axios.get(`https://www.purpleair.com/json?show=${this.sensorId}`);
