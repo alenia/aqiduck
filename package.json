@@ -2,7 +2,7 @@
   "name": "aqiduck",
   "version": "0.1.0",
   "description": "Air quality and temperature aggregator and reporter",
-  "main": "dist/src/index.js",
+  "main": "dist/index.js",
   "author": "Daniela Wellisz",
   "license": "MIT",
   "private": false,

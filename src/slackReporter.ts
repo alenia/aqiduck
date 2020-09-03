@@ -1,4 +1,4 @@
-import secrets from '../secrets.json';
+const secrets = require('../secrets.json'); //eslint-disable-line
 import Aggregator from './aggregator';
 import { WebClient, WebAPICallResult } from '@slack/web-api';
 
