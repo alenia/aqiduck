@@ -21,7 +21,9 @@
     "coverage": "jest --coverage",
     "build-ts": "tsc",
     "watch-ts": "tsc -w",
-    "clean-test": "rm -rf dist && mkdir dist && tsc && jest",
-    "clean-run": "rm -rf dist && mkdir dist && tsc && node dist/src/index.js"
+    "clean-ts": "rm -rf dist && mkdir dist && tsc",
+    "clean-test": "yarn clean-ts && jest",
+    "clean-run": "yarn clean-ts&& node dist/src/index.js",
+    "test-all": "yarn clean-test && SILENT=true node dist/src/index.js"
   }
 }
