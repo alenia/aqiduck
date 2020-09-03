@@ -1,4 +1,4 @@
-const calculateAQI = require('./calculateAQI');
+import calculateAQI from './calculateAQI';
 
 test("It turns raw PM 2.5 numbers into AQI", () => {
   expect(calculateAQI(6)).toEqual(25);
