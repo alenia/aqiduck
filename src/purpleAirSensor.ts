@@ -1,6 +1,6 @@
-const axios = require('axios');
 import { Sensor, sensorData } from './interfaces/sensor';
 import calculateAQI from './calculateAQI';
+import axios from 'axios';
 
 export default class PurpleAirSensor implements Sensor {
   sensorId: number;

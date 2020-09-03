@@ -1,22 +1,33 @@
-const { WebClient } = require('@slack/web-api');
-const secrets = require('../secrets.json');
+import secrets from '../secrets.json';
 import Aggregator from './aggregator';
+import { WebClient, WebAPICallResult } from '@slack/web-api';
 
-interface channel {
+interface channelWithTopic {
   name: string;
   id: string;
-  topic?: {
+  topic: {
     value: string;
   }
+}
+
+interface channelListResult extends WebAPICallResult {
+  channels: Array<{
+    name: string;
+    id: string;
+  }>
+}
+
+interface channelInfoResult extends WebAPICallResult {
+  channel: channelWithTopic;
 }
 
 const web = new WebClient(secrets.SLACK_TOKEN);
 
 class SlackReporter {
-  channel: channel;
+  channel: channelWithTopic;
   aggregator: Aggregator;
 
-  constructor({ aggregator, channel } : { aggregator: Aggregator, channel: channel }) {
+  constructor({ aggregator, channel } : { aggregator: Aggregator, channel: channelWithTopic }) {
     this.channel = channel;
     this.aggregator = aggregator;
   }
@@ -29,7 +40,8 @@ class SlackReporter {
     });
   }
 
-  postMessage(text: any) : void {
+  postMessage(text: string) : void {
+    //TODO: Sometimes I get things that aren't strings from the purpleAir JSON. fix this there instead of type checking
     if(typeof(text) !== "string") {
       console.log("Message not a string, not posting!", text, typeof(text));
       return;
@@ -44,11 +56,11 @@ class SlackReporter {
     web.chat.postMessage({
       channel: this.channel.id,
       text,
-    }).then((s: any) => { console.log(`Message posted in ${this.channel.name}!`) })
-    .catch((e: any) => { console.log(`ERROR posting in ${this.channel.name}`, e) });
+    }).then(() => { console.log(`Message posted in ${this.channel.name}!`) })
+    .catch((e: Error) => { console.log(`ERROR posting in ${this.channel.name}`, e) });
   }
 
-  static subscribeToChannelFromInfo(channel: channel) : SlackReporter | undefined {
+  static subscribeToChannelFromInfo(channel: channelWithTopic) : SlackReporter | undefined {
     const topic = channel.topic.value;
     const config = topic.split('***')[1];
     if(!config) {
@@ -68,17 +80,17 @@ class SlackReporter {
   static subscribe() : void {
     (() => {
       web.users.conversations()
-        .then(({ channels } : { channels: Array<channel> }) => {
+        .then(({ channels } : channelListResult) => {
           channels.forEach((c) => {
             web.conversations.info({channel: c.id})
-              .then(({ channel } : { channel : channel }) => {
+              .then(({ channel } : channelInfoResult) => {
                 SlackReporter.subscribeToChannelFromInfo(channel)
-              }).catch((error: any) => { console.log('ERROR', error) });
+              }).catch((error: Error) => { console.log('ERROR', error) });
           })
         })
-        .catch((error: any) => { console.log('ERROR', error) });
+        .catch((error: Error) => { console.log('ERROR', error) });
     })();
-  };
+  }
 }
 
 export default SlackReporter;

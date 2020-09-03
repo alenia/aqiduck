@@ -13,4 +13,4 @@ export default class MockSensor implements Sensor {
       temperature: 42
     });
   }
-};
+}

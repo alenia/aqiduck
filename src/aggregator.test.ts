@@ -16,7 +16,7 @@ const indoorSensor = {
 }
 
 //TODO: once I have aggregator.js converted to typescript set this type
-let aggregator: any;
+let aggregator: Aggregator;
 
 
 beforeEach(() => {
@@ -32,7 +32,7 @@ describe('.report', () => {
       AQI: 42,
       temperature: 75
     };
-    let report = await aggregator.report();
+    const report = await aggregator.report();
     expect(indoorSensor.getData).toHaveBeenCalled();
     expect(report).toMatch('Indoor AQI: 42');
     expect(report).toMatch('Indoor Temperature: 75');
@@ -43,7 +43,7 @@ describe('.report', () => {
       AQI: 54,
       temperature: 82
     };
-    let report = await aggregator.report();
+    const report = await aggregator.report();
     expect(outdoorSensor.getData).toHaveBeenCalled();
     expect(report).toMatch('Outdoor AQI: 54');
     expect(report).toMatch('Outdoor Temperature: 82');
@@ -51,13 +51,13 @@ describe('.report', () => {
   test("It does not list the indoor AQI if none provided", async () => {
     expect.assertions(2);
     indoorSensorData = {};
-    let report = await aggregator.report();
+    const report = await aggregator.report();
     expect(indoorSensor.getData).toHaveBeenCalled();
     expect(report).not.toMatch('Indoor AQI');
   });
   test("It works without an indoor sensor", async () => {
     expect.assertions(2);
-    let smallAggregator = new Aggregator([{ name: "Outdoor", sensor: outdoorSensor }]);
+    const smallAggregator = new Aggregator([{ name: "Outdoor", sensor: outdoorSensor }]);
     indoorSensorData = {
       AQI: 42,
       temperature: 75
@@ -66,7 +66,7 @@ describe('.report', () => {
       AQI: 54,
       temperature: 82
     };
-    let report = await smallAggregator.report();
+    const report = await smallAggregator.report();
     expect(report).toMatch('Outdoor AQI');
     expect(report).not.toMatch('Indoor');
   });
