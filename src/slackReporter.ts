@@ -21,15 +21,10 @@ interface channelInfoResult extends WebAPICallResult {
   channel: channelWithTopic;
 }
 
-//should this be infered somehow in the static methods? I feel weird about being explicit when it's passed through
-interface reporterConfig {
-  onCreate?: (reporter: SlackReporter) => void;
-}
 
 interface reporterConstructorArgs {
   aggregator: Aggregator;
   channel: channelWithTopic;
-  onCreate?: (reporter: SlackReporter) => void;
 }
 
 
@@ -39,10 +34,9 @@ class SlackReporter {
   channel: channelWithTopic;
   aggregator: Aggregator;
 
-  constructor({ aggregator, channel, onCreate } : reporterConstructorArgs) {
+  constructor({ aggregator, channel } : reporterConstructorArgs) {
     this.channel = channel;
     this.aggregator = aggregator;
-    onCreate && onCreate(this);
   }
 
   report() : void {
@@ -74,7 +68,7 @@ class SlackReporter {
   }
 
   //TODO: this method should be private but I want to test it
-  static subscribeToChannelFromInfo(channel : channelWithTopic, reporterConfig?: reporterConfig) : SlackReporter | undefined {
+  static subscribeToChannelFromInfo(channel : channelWithTopic) : SlackReporter | undefined {
     const topic = channel.topic.value;
     const config = topic.split('***')[1];
     if(!config) {
@@ -84,14 +78,14 @@ class SlackReporter {
 
     const aggregator = Aggregator.fromConfig(config);
 
-    return new SlackReporter({ aggregator, channel, ...reporterConfig });
+    return new SlackReporter({ aggregator, channel });
   }
 
-  static async subscribeAll(reporterConfig?: reporterConfig): Promise<void> {
+  static async subscribeAll(): Promise<Array<Promise<SlackReporter>>> {
     const { channels } = await web.users.conversations() as channelListResult;
-    channels.forEach(async (c) => {
+    return channels.map(async (c) => {
       const { channel: channelInfo } = await web.conversations.info({channel: c.id}) as channelInfoResult;
-      return SlackReporter.subscribeToChannelFromInfo(channelInfo, reporterConfig);
+      return SlackReporter.subscribeToChannelFromInfo(channelInfo);
     })
   }
 }

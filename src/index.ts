@@ -1,9 +1,7 @@
-import SlackReporter from './slackReporter.js';
+import AqiDuckController from './aqiDuckController.js';
 
 export default async function index() : Promise<void> {
-  SlackReporter.subscribeAll({
-    onCreate: (reporter: SlackReporter) => reporter.report()
-  });
+  AqiDuckController.subscribeAll();
 }
 
 index();
