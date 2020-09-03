@@ -20,9 +20,11 @@ export default class AqiDuckController {
 
   static async subscribeAll() : Promise<void> {
     const reporters = await SlackReporter.subscribeAll();
-    reporters.forEach(async (reporterPromise) => {
-      const slackReporter = await reporterPromise;
-      const controller = new AqiDuckController({ slackReporter, aggregator: slackReporter.aggregator });
+    reporters.forEach(async (slackReporter) => {
+      const aggregatorConfig = await slackReporter.getConfig();
+      //TODO: validate config here
+      const aggregator = Aggregator.fromConfig(aggregatorConfig);
+      const controller = new AqiDuckController({ slackReporter, aggregator });
       controller.report()
     })
   }

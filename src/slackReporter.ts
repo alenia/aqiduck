@@ -1,5 +1,4 @@
 const secrets = require('../secrets.json'); //eslint-disable-line
-import Aggregator from './aggregator';
 import { WebClient, WebAPICallResult } from '@slack/web-api';
 
 interface channelWithTopic {
@@ -10,33 +9,26 @@ interface channelWithTopic {
   }
 }
 
+interface basicChannel {
+  name: string;
+  id: string;
+}
+
 interface channelListResult extends WebAPICallResult {
-  channels: Array<{
-    name: string;
-    id: string;
-  }>
+  channels: Array<basicChannel>
 }
 
 interface channelInfoResult extends WebAPICallResult {
   channel: channelWithTopic;
 }
 
-
-interface reporterConstructorArgs {
-  aggregator: Aggregator;
-  channel: channelWithTopic;
-}
-
-
 const web = new WebClient(secrets.SLACK_TOKEN);
 
 class SlackReporter {
-  channel: channelWithTopic;
-  aggregator: Aggregator;
+  channel: basicChannel;
 
-  constructor({ aggregator, channel } : reporterConstructorArgs) {
+  constructor(channel : basicChannel) {
     this.channel = channel;
-    this.aggregator = aggregator;
   }
 
   postMessage(text: string) : void {
@@ -59,25 +51,23 @@ class SlackReporter {
     .catch((e: Error) => { console.log(`ERROR posting in ${this.channel.name}`, e) });
   }
 
-  //TODO: this method should be private but I want to test it
-  static subscribeToChannelFromInfo(channel : channelWithTopic) : SlackReporter | undefined {
-    const topic = channel.topic.value;
+  async getConfig() : Promise<string | undefined> {
+    const { channel: channelInfo } = await web.conversations.info({channel: this.channel.id}) as channelInfoResult;
+    //TODO: store current topic on this?
+    const topic = channelInfo.topic.value;
     const config = topic.split('***')[1];
     if(!config) {
-      console.log(`no config for channel ${channel.name}`, channel.topic);
+      console.log(`no config for channel ${this.channel.name}`, channelInfo.topic);
       return;
     }
 
-    const aggregator = Aggregator.fromConfig(config);
-
-    return new SlackReporter({ aggregator, channel });
+    return config;
   }
 
-  static async subscribeAll(): Promise<Array<Promise<SlackReporter>>> {
+  static async subscribeAll(): Promise<Array<SlackReporter>> {
     const { channels } = await web.users.conversations() as channelListResult;
-    return channels.map(async (c) => {
-      const { channel: channelInfo } = await web.conversations.info({channel: c.id}) as channelInfoResult;
-      return SlackReporter.subscribeToChannelFromInfo(channelInfo);
+    return channels.map((channel) => {
+      return new SlackReporter(channel);
     })
   }
 }
