@@ -2,7 +2,7 @@
   "name": "aqiduck",
   "version": "0.1.0",
   "description": "Air quality and temperature aggregator and reporter",
-  "main": "dist/src/index.js",
+  "main": "dist/index.js",
   "author": "Daniela Wellisz",
   "license": "MIT",
   "private": false,
@@ -23,7 +23,7 @@
     "watch-ts": "tsc -w",
     "clean-ts": "rm -rf dist && mkdir dist && tsc",
     "clean-test": "yarn clean-ts && jest",
-    "clean-run": "yarn clean-ts&& node dist/src/index.js",
-    "test-all": "yarn clean-test && SILENT=true node dist/src/index.js"
+    "clean-run": "yarn clean-ts&& node dist/index.js",
+    "test-all": "yarn clean-test && SILENT=true node dist/index.js"
   }
 }

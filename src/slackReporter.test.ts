@@ -1,21 +1,21 @@
 jest.genMockFromModule('@slack/web-api');
-const Aggregator = require('./aggregator');
 
 jest.mock('./aggregator', () => {
   return { fromConfig: jest.fn().mockImplementation(() => {return {
     report: jest.fn().mockImplementation(() => { return Promise.resolve() })
   }}) };
 });
+import Aggregator from './aggregator';
 
-const reporter = require('./slackReporter');
+import SlackReporter from './slackReporter';
 
 it('.subscribe should not blow up', () => {
-  reporter.subscribe();
+  SlackReporter.subscribe();
 });
 
 describe("subscribeToChannelFromInfo", () => {
   it('Should create a aggregator based on the JSON in the topic', () => {
-    reporter.subscribeToChannelFromInfo({
+    SlackReporter.subscribeToChannelFromInfo({
       id: "123",
       name: "thing",
       topic: {

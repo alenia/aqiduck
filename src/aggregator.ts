@@ -50,7 +50,7 @@ class Aggregator {
     }
   }
 
-  static fromConfig(configString : string) {
+  public static fromConfig(configString : string) {
     let configJSON;
     try {
       configJSON = JSON.parse(configString);
