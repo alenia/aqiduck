@@ -1,7 +1,7 @@
 import SlackReporter from './slackReporter.js';
 
 export default async function index() : Promise<void> {
-  SlackReporter.subscribe();
+  SlackReporter.subscribeAll();
 }
 
 index();

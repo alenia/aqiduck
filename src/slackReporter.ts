@@ -30,6 +30,7 @@ class SlackReporter {
   constructor({ aggregator, channel } : { aggregator: Aggregator, channel: channelWithTopic }) {
     this.channel = channel;
     this.aggregator = aggregator;
+    this.report();
   }
 
   report() : void {
@@ -60,6 +61,7 @@ class SlackReporter {
     .catch((e: Error) => { console.log(`ERROR posting in ${this.channel.name}`, e) });
   }
 
+  //TODO: this method should be private but I want to test it
   static subscribeToChannelFromInfo(channel: channelWithTopic) : SlackReporter | undefined {
     const topic = channel.topic.value;
     const config = topic.split('***')[1];
@@ -70,26 +72,15 @@ class SlackReporter {
 
     const aggregator = Aggregator.fromConfig(config);
 
-    const reporter = new SlackReporter({ aggregator, channel });
-
-    reporter.report();
-
-    return reporter;
+    return new SlackReporter({ aggregator, channel });
   }
 
-  static subscribe() : void {
-    (() => {
-      web.users.conversations()
-        .then(({ channels } : channelListResult) => {
-          channels.forEach((c) => {
-            web.conversations.info({channel: c.id})
-              .then(({ channel } : channelInfoResult) => {
-                SlackReporter.subscribeToChannelFromInfo(channel)
-              }).catch((error: Error) => { console.log('ERROR', error) });
-          })
-        })
-        .catch((error: Error) => { console.log('ERROR', error) });
-    })();
+  static async subscribeAll(): Promise<void> {
+    const { channels } = await web.users.conversations() as channelListResult;
+    channels.forEach(async (c) => {
+      const { channel: channelInfo } = await web.conversations.info({channel: c.id}) as channelInfoResult;
+      return SlackReporter.subscribeToChannelFromInfo(channelInfo);
+    })
   }
 }
 

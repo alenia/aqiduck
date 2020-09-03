@@ -9,11 +9,23 @@ import Aggregator from './aggregator';
 
 import SlackReporter from './slackReporter';
 
-it('.subscribe should not blow up', () => {
-  SlackReporter.subscribe();
+describe("SlackReporter instances", () => {
+  describe("report", () => {
+    it.todo("Fetches information from the aggregator");
+    it.todo("Posts that information");
+  });
+  describe("postMessage", () => {
+    it.todo("Posts a string to slack");
+  });
 });
 
-describe("subscribeToChannelFromInfo", () => {
+describe(".subscribeAll", () => {
+  it('should not blow up', () => {
+    SlackReporter.subscribeAll(); //TODO this should be async
+  });
+});
+
+describe(".subscribeToChannelFromInfo", () => {
   it('Should create a aggregator based on the JSON in the topic', () => {
     SlackReporter.subscribeToChannelFromInfo({
       id: "123",
@@ -25,4 +37,3 @@ describe("subscribeToChannelFromInfo", () => {
     expect(Aggregator.fromConfig).toHaveBeenCalledWith('{"sensors": [{"name": "readThisJSON"}]}');
   });
 });
-
