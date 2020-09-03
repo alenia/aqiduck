@@ -3,11 +3,13 @@ import Aggregator from './aggregator';
 let outdoorSensorData = {}, indoorSensorData = {};
 
 const outdoorSensor = {
+  sensorId: 5,
   getData: jest.fn(() => {
     return Promise.resolve(outdoorSensorData);
   }),
 }
 const indoorSensor = {
+  sensorId: 6,
   getData: jest.fn(() => {
     return Promise.resolve(indoorSensorData);
   }),

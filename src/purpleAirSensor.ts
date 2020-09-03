@@ -2,7 +2,7 @@ const axios = require('axios');
 import { Sensor, sensorData } from './interfaces/sensor';
 import calculateAQI from './calculateAQI';
 
-class PurpleAirSensor implements Sensor {
+export default class PurpleAirSensor implements Sensor {
   sensorId: number;
 
   constructor({ id }: { id: number }) {
@@ -35,5 +35,3 @@ class PurpleAirSensor implements Sensor {
     }
   }
 }
-
-module.exports = PurpleAirSensor;

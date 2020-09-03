@@ -1,6 +1,6 @@
 import { Sensor, sensorData } from './interfaces/sensor';
 
-class MockSensor implements Sensor {
+export default class MockSensor implements Sensor {
   sensorId: string | number;
 
   constructor({ id }: { id: string | number }) {
@@ -14,5 +14,3 @@ class MockSensor implements Sensor {
     });
   }
 };
-
-module.exports = MockSensor;
