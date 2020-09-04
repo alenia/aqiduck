@@ -1,56 +1,35 @@
 const secrets = require('../secrets.json'); //eslint-disable-line
-import Aggregator from './aggregator';
 import { WebClient, WebAPICallResult } from '@slack/web-api';
 
-interface channelWithTopic {
+interface basicChannel {
   name: string;
   id: string;
-  topic: {
-    value: string;
-  }
 }
 
 interface channelListResult extends WebAPICallResult {
-  channels: Array<{
-    name: string;
-    id: string;
-  }>
+  channels: Array<basicChannel>
 }
 
 interface channelInfoResult extends WebAPICallResult {
-  channel: channelWithTopic;
+  channel: {
+    name: string;
+    id: string;
+    topic: {
+      value: string;
+    }
+  }
 }
-
-//should this be infered somehow in the static methods? I feel weird about being explicit when it's passed through
-interface reporterConfig {
-  onCreate?: (reporter: SlackReporter) => void;
-}
-
-interface reporterConstructorArgs {
-  aggregator: Aggregator;
-  channel: channelWithTopic;
-  onCreate?: (reporter: SlackReporter) => void;
-}
-
 
 const web = new WebClient(secrets.SLACK_TOKEN);
 
 class SlackReporter {
-  channel: channelWithTopic;
-  aggregator: Aggregator;
+  channel: basicChannel;
+  topic: {
+    value: string;
+  };
 
-  constructor({ aggregator, channel, onCreate } : reporterConstructorArgs) {
+  constructor(channel : basicChannel) {
     this.channel = channel;
-    this.aggregator = aggregator;
-    onCreate && onCreate(this);
-  }
-
-  report() : void {
-    this.aggregator.report().then((report) => {
-      this.postMessage(report);
-    }).catch((error) => {
-      console.log("error getting aggregator report", this.channel, error)
-    });
   }
 
   postMessage(text: string) : void {
@@ -73,25 +52,22 @@ class SlackReporter {
     .catch((e: Error) => { console.log(`ERROR posting in ${this.channel.name}`, e) });
   }
 
-  //TODO: this method should be private but I want to test it
-  static subscribeToChannelFromInfo(channel : channelWithTopic, reporterConfig?: reporterConfig) : SlackReporter | undefined {
-    const topic = channel.topic.value;
-    const config = topic.split('***')[1];
+  async getConfig() : Promise<string | undefined> {
+    const { channel: channelInfo } = await web.conversations.info({channel: this.channel.id}) as channelInfoResult;
+    this.topic = channelInfo.topic;
+    const config = this.topic.value.split('***')[1];
     if(!config) {
-      console.log(`no config for channel ${channel.name}`, channel.topic);
+      console.log(`no config for channel ${this.channel.name}`, this.topic);
       return;
     }
 
-    const aggregator = Aggregator.fromConfig(config);
-
-    return new SlackReporter({ aggregator, channel, ...reporterConfig });
+    return config;
   }
 
-  static async subscribeAll(reporterConfig?: reporterConfig): Promise<void> {
+  static async subscribeAll(): Promise<Array<SlackReporter>> {
     const { channels } = await web.users.conversations() as channelListResult;
-    channels.forEach(async (c) => {
-      const { channel: channelInfo } = await web.conversations.info({channel: c.id}) as channelInfoResult;
-      return SlackReporter.subscribeToChannelFromInfo(channelInfo, reporterConfig);
+    return channels.map((channel) => {
+      return new SlackReporter(channel);
     })
   }
 }
