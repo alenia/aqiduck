@@ -1,4 +1,4 @@
-import SlackReporter from './slackReporter.js';
+import SlackReporter from './slackReporter';
 import Aggregator from './aggregator';
 
 export default class AqiDuckController {

@@ -1,14 +1,6 @@
 const secrets = require('../secrets.json'); //eslint-disable-line
 import { WebClient, WebAPICallResult } from '@slack/web-api';
 
-interface channelWithTopic {
-  name: string;
-  id: string;
-  topic: {
-    value: string;
-  }
-}
-
 interface basicChannel {
   name: string;
   id: string;
@@ -19,13 +11,22 @@ interface channelListResult extends WebAPICallResult {
 }
 
 interface channelInfoResult extends WebAPICallResult {
-  channel: channelWithTopic;
+  channel: {
+    name: string;
+    id: string;
+    topic: {
+      value: string;
+    }
+  }
 }
 
 const web = new WebClient(secrets.SLACK_TOKEN);
 
 class SlackReporter {
   channel: basicChannel;
+  topic: {
+    value: string;
+  };
 
   constructor(channel : basicChannel) {
     this.channel = channel;
@@ -53,11 +54,10 @@ class SlackReporter {
 
   async getConfig() : Promise<string | undefined> {
     const { channel: channelInfo } = await web.conversations.info({channel: this.channel.id}) as channelInfoResult;
-    //TODO: store current topic on this?
-    const topic = channelInfo.topic.value;
-    const config = topic.split('***')[1];
+    this.topic = channelInfo.topic;
+    const config = this.topic.value.split('***')[1];
     if(!config) {
-      console.log(`no config for channel ${this.channel.name}`, channelInfo.topic);
+      console.log(`no config for channel ${this.channel.name}`, this.topic);
       return;
     }
 
