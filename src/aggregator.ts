@@ -23,25 +23,37 @@ const reportData = function({AQI, temperature} : sensorData, prefix : string) {
   return output;
 }
 
+class DecoratedSensor {
+  name: string;
+  sensor: Sensor;
+
+  constructor({ name, sensor } : labeledSensor) {
+    this.sensor = sensor;
+    this.name = name;
+  }
+
+  async getReport() : Promise<string | Error> {
+    try {
+      const data = await this.sensor.getData();
+      return reportData(data, this.name);
+    } catch (e) {
+      console.log('reporting error for sensor', this, e);
+      throw(e);
+    }
+  }
+}
+
 class Aggregator {
-  sensors: Array<labeledSensor>;
+  sensors: Array<DecoratedSensor>;
 
   constructor(sensors: Array<labeledSensor>) {
-    this.sensors = sensors;
+    this.sensors = sensors.map((s) => new DecoratedSensor(s));
     return this;
   }
 
   async report(): Promise<undefined | string> {
     try {
-      const dataReports = this.sensors.map(async (s) => {
-        try {
-          const data = await s.sensor.getData();
-          return reportData(data, s.name);
-        } catch (e) {
-          console.log('reporting error for sensor', s, e);
-          throw(e);
-        }
-      })
+      const dataReports = this.sensors.map(async (s) => s.getReport());
 
       const strs = await Promise.all(dataReports);
       return strs.join();
