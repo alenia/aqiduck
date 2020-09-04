@@ -4,12 +4,16 @@ import sensorMap from './sensorMap';
 interface labeledSensor {
   name: string;
   sensor: Sensor;
+  lowAQIThreshold?: number;
+  highAQIThreshold?: number;
 }
 
 interface sensorJson {
   name: string;
   type: string;
   id: number;
+  lowAQIThreshold?: number;
+  highAQIThreshold?: number;
 }
 
 const reportData = function({AQI, temperature} : sensorData, prefix : string) {
@@ -23,23 +27,68 @@ const reportData = function({AQI, temperature} : sensorData, prefix : string) {
   return output;
 }
 
-class DecoratedSensor {
+enum notifyBracket {
+  low = "low",
+  high = "high",
+  none = "",
+}
+
+export class DecoratedSensor {
   name: string;
   sensor: Sensor;
+  lowAQIThreshold?: number;
+  highAQIThreshold?: number;
+  private currentAQINotifyBracket: notifyBracket;
 
-  constructor({ name, sensor } : labeledSensor) {
+  constructor({ name, sensor, lowAQIThreshold, highAQIThreshold } : labeledSensor) {
     this.sensor = sensor;
     this.name = name;
+    //TODO this should probably be an array of two values. Also do validation that low is below high
+    this.lowAQIThreshold = lowAQIThreshold;
+    this.highAQIThreshold = highAQIThreshold;
+    this.currentAQINotifyBracket = notifyBracket.none;
   }
 
-  async getReport() : Promise<string | Error> {
+  async getData() {
     try {
-      const data = await this.sensor.getData();
-      return reportData(data, this.name);
+      return await this.sensor.getData();
     } catch (e) {
       console.log('reporting error for sensor', this, e);
       throw(e);
     }
+  }
+
+  async monitorThresholds() : Promise<string> {
+    const data = await this.getData();
+    console.log(reportData(data, this.currentAQINotifyBracket));
+    const newBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
+    if(newBracket && newBracket !== this.currentAQINotifyBracket) {
+      this.currentAQINotifyBracket = newBracket;
+      return `QUACK!!! AQI is now ${newBracket}!!\n\n${reportData(data, this.name)}`
+    }
+    return ""
+  }
+
+  async getReport() : Promise<string | Error> {
+    const data = await this.getData();
+    // Reset thresholds brackets since we're reporting data anyway
+    this.currentAQINotifyBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
+    return reportData(data, this.name);
+  }
+
+  private calculateAQINotifyBracket(AQI : number): notifyBracket {
+    if(!this.lowAQIThreshold || !this.highAQIThreshold) {
+      console.log("no thresholds to notify for");
+      return notifyBracket.none;
+    }
+
+    if(AQI < this.lowAQIThreshold) {
+      return notifyBracket.low
+    }
+    if(AQI > this.highAQIThreshold) {
+      return notifyBracket.high
+    }
+    return notifyBracket.none;
   }
 }
 
@@ -49,6 +98,17 @@ class Aggregator {
   constructor(sensors: Array<labeledSensor>) {
     this.sensors = sensors.map((s) => new DecoratedSensor(s));
     return this;
+  }
+
+  async monitorAndNotify(): Promise<undefined | string> {
+    try {
+      const checks = this.sensors.map(async (s) => s.monitorThresholds());
+
+      const strs = await Promise.all(checks);
+      return strs.filter(s => s.length > 0).join();
+    } catch (e) {
+      console.log('reporting error', e);
+    }
   }
 
   async report(): Promise<undefined | string> {
@@ -72,11 +132,14 @@ class Aggregator {
     }
 
     const sensors = configJSON.sensors.map((sensorData : sensorJson) => {
+      console.log("setting up sensor", sensorData);
       const Sensor = sensorMap[sensorData.type];
       if(Sensor) {
         return {
           name: sensorData.name,
-          sensor: new Sensor(sensorData)
+          sensor: new Sensor(sensorData),
+          lowAQIThreshold: sensorData.lowAQIThreshold,
+          highAQIThreshold: sensorData.highAQIThreshold,
         }
       }
       console.log(`Unknown sensor "${sensorData.type}"`);
