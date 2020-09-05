@@ -27,8 +27,12 @@ export default class AqiDuckController {
     });
   }
 
-  // now I'm ready to
+  introduce() : void {
+    this.slackReporter.postMessage("Hello I'm AQIDuck. Let me tell you about the air quality.");
+  }
+
   start() : void {
+    this.introduce();
     if(process.env.NODE_ENV==="test") {
       console.log("testing");
       this.report();

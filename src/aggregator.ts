@@ -4,16 +4,14 @@ import sensorMap from './sensorMap';
 interface labeledSensor {
   name: string;
   sensor: Sensor;
-  lowAQIThreshold?: number;
-  highAQIThreshold?: number;
+  AQIThresholds?: [number, number];
 }
 
 interface sensorJson {
   name: string;
   type: string;
   id: number;
-  lowAQIThreshold?: number;
-  highAQIThreshold?: number;
+  AQIThresholds?: [number, number];
 }
 
 const reportData = function({AQI, temperature} : sensorData, prefix : string) {
@@ -36,16 +34,14 @@ enum notifyBracket {
 export class DecoratedSensor {
   name: string;
   sensor: Sensor;
-  lowAQIThreshold?: number;
-  highAQIThreshold?: number;
+  AQIThresholds: [number,number];
   private currentAQINotifyBracket: notifyBracket;
 
-  constructor({ name, sensor, lowAQIThreshold, highAQIThreshold } : labeledSensor) {
+  constructor({ name, sensor, AQIThresholds } : labeledSensor) {
     this.sensor = sensor;
     this.name = name;
     //TODO this should probably be an array of two values. Also do validation that low is below high
-    this.lowAQIThreshold = lowAQIThreshold;
-    this.highAQIThreshold = highAQIThreshold;
+    this.AQIThresholds = AQIThresholds;
     this.currentAQINotifyBracket = notifyBracket.none;
   }
 
@@ -64,7 +60,7 @@ export class DecoratedSensor {
     const newBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
     if(newBracket && newBracket !== this.currentAQINotifyBracket) {
       this.currentAQINotifyBracket = newBracket;
-      return `QUACK!!! AQI is now ${newBracket}!!\n\n${reportData(data, this.name)}`
+      return `QUACK!!! AQI is getting ${newBracket}er!!\n\n${reportData(data, this.name)}`
     }
     return ""
   }
@@ -77,15 +73,15 @@ export class DecoratedSensor {
   }
 
   private calculateAQINotifyBracket(AQI : number): notifyBracket {
-    if(!this.lowAQIThreshold || !this.highAQIThreshold) {
+    if(!this.AQIThresholds || this.AQIThresholds.length < 2) {
       console.log("no thresholds to notify for");
       return notifyBracket.none;
     }
 
-    if(AQI < this.lowAQIThreshold) {
+    if(AQI < this.AQIThresholds[0]) {
       return notifyBracket.low
     }
-    if(AQI > this.highAQIThreshold) {
+    if(AQI > this.AQIThresholds[1]) {
       return notifyBracket.high
     }
     return notifyBracket.none;
@@ -138,8 +134,7 @@ class Aggregator {
         return {
           name: sensorData.name,
           sensor: new Sensor(sensorData),
-          lowAQIThreshold: sensorData.lowAQIThreshold,
-          highAQIThreshold: sensorData.highAQIThreshold,
+          AQIThresholds: sensorData.AQIThresholds,
         }
       }
       console.log(`Unknown sensor "${sensorData.type}"`);
