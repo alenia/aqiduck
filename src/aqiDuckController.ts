@@ -34,7 +34,6 @@ export default class AqiDuckController {
   start() : void {
     this.introduce();
     if(process.env.NODE_ENV==="test") {
-      console.log("testing");
       this.report();
     } else {
       this.report();

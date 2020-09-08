@@ -28,6 +28,6 @@
     "clean-test": "yarn clean-ts && jest",
     "lint": "yarn eslint . --ext .js,.jsx,.ts,.tsx",
     "clean-run": "yarn clean-ts && node .",
-    "test-all": "yarn clean-test --coverage && yarn lint && SILENT=true node ."
+    "test-all": "yarn clean-test --coverage && yarn lint && NODE_ENV=test SILENT=true node ."
   }
 }

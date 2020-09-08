@@ -45,16 +45,10 @@ export class DecoratedSensor {
     this.currentAQINotifyBracket = notifyBracket.none;
   }
 
-  async getData() {
-    try {
-      return await this.sensor.getData();
-    } catch (e) {
-      console.log('reporting error for sensor', this, e);
-      throw(e);
-    }
-  }
-
   async monitorThresholds() : Promise<string> {
+    if(!this.AQIThresholds) {
+      return "";
+    }
     const data = await this.getData();
     console.log(reportData(data, this.currentAQINotifyBracket));
     const newBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
@@ -71,6 +65,16 @@ export class DecoratedSensor {
     this.currentAQINotifyBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
     return reportData(data, this.name);
   }
+
+  private async getData() { //Only call this with getReport or monitorThresholds
+    try {
+      return await this.sensor.getData();
+    } catch (e) {
+      console.log('reporting error for sensor', this, e);
+      throw(e);
+    }
+  }
+
 
   private calculateAQINotifyBracket(AQI : number): notifyBracket {
     if(!this.AQIThresholds || this.AQIThresholds.length < 2) {
