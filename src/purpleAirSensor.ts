@@ -25,7 +25,7 @@ export default class PurpleAirSensor implements Sensor {
 
       return {
         AQI: calculateAQI(tenMinuteAveragePM2_5),
-        temperature: results.temp_f
+        temperature: results.temp_f - 8
       };
     } catch(error) {
         console.log("Error getting data for PurpleAir sensor", this);
