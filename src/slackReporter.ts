@@ -1,4 +1,3 @@
-const secrets = require('../secrets.json'); //eslint-disable-line
 import { WebClient, WebAPICallResult } from '@slack/web-api';
 
 interface basicChannel {
@@ -20,7 +19,7 @@ interface channelInfoResult extends WebAPICallResult {
   }
 }
 
-const web = new WebClient(secrets.SLACK_TOKEN);
+const web = new WebClient(process.env.SLACK_TOKEN);
 
 class SlackReporter {
   channel: basicChannel;

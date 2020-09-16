@@ -1,5 +1,5 @@
 node_modules
 dist
 coverage
-secrets.json
+.env
 yarn.lock
