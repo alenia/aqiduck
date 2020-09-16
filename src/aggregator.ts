@@ -16,7 +16,7 @@ interface sensorJson {
 
 const reportData = function({AQI, temperature} : sensorData, prefix : string) {
   let output = "";
-  if(AQI) {
+  if(AQI === 0 || AQI) {
     output += `${prefix} AQI: ${AQI}\n`;
   }
   if(temperature) {

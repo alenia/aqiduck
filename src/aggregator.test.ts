@@ -169,6 +169,15 @@ describe('.report', () => {
     expect(indoorSensor.getData).toHaveBeenCalled();
     expect(report).not.toMatch('Indoor AQI');
   });
+  test("It lists the AQI if it is zero", async () => {
+    expect.assertions(2);
+    indoorSensorData = {
+      AQI: 0,
+    };
+    const report = await aggregator.report();
+    expect(indoorSensor.getData).toHaveBeenCalled();
+    expect(report).toMatch('Indoor AQI');
+  });
   test("It works without an indoor sensor", async () => {
     expect.assertions(2);
     const smallAggregator = new Aggregator([{ name: "Outdoor", sensor: outdoorSensor }]);
