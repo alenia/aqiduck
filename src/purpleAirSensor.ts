@@ -12,20 +12,22 @@ export default class PurpleAirSensor implements Sensor {
   async getData(): Promise<sensorData> {
     let response
     try {
-      response = await axios.get(`https://www.purpleair.com/json?show=${this.sensorId}`);
-      const results = response.data.results[0];
+      response = await axios.get(`https://api.purpleair.com/v1/sensors/${this.sensorId}`, {
+        headers: { "X-API-Key": process.env.PURPLEAIR_API_READ_KEY }
+      });
+      const results = response.data.sensor;
       if(!results) {
         // TODO: post a message to slack about this error state
         console.log(`Empty results for PurpleAir Sensor ${this.sensorId}`);
         return { error: "No results" }
       }
-      const stats = JSON.parse(results.Stats);
-      const currentPM2_5 = stats.v;
-      const tenMinuteAveragePM2_5 = stats.v1;
+      const stats = results.stats_a;
+      const currentPM2_5 = stats["pm2.5"];
+      const tenMinuteAveragePM2_5 = stats["pm2.5_10minute"];
 
       return {
         AQI: calculateAQI(tenMinuteAveragePM2_5),
-        temperature: results.temp_f - 8
+        temperature: results.temperature_a - 8
       };
     } catch(error) {
         console.log("Error getting data for PurpleAir sensor", this);
