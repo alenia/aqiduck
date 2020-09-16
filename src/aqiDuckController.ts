@@ -45,8 +45,16 @@ export default class AqiDuckController {
     const reporters = await SlackReporter.subscribeAll();
     reporters.forEach(async (slackReporter) => {
       const aggregatorConfig = await slackReporter.getConfig();
+      if(!aggregatorConfig) {
+        slackReporter.postMessage(`Trying to set up AQIDuck but there is no aggregator config`);
+        return;
+      }
       //TODO: validate config here
       const aggregator = Aggregator.fromConfig(aggregatorConfig);
+      if(!aggregator) {
+        slackReporter.postMessage(`Error setting up reporter from config ${aggregatorConfig}`)
+        return;
+      }
       const controller = new AqiDuckController({ slackReporter, aggregator });
       controller.start()
     })

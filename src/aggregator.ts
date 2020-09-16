@@ -50,7 +50,7 @@ export class DecoratedSensor {
       return "";
     }
     const data = await this.getData();
-    console.log(reportData(data, this.currentAQINotifyBracket));
+    console.log(this.name, reportData(data, this.currentAQINotifyBracket));
     const newBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
     if(newBracket && newBracket !== this.currentAQINotifyBracket) {
       this.currentAQINotifyBracket = newBracket;
@@ -116,7 +116,7 @@ class Aggregator {
       const dataReports = this.sensors.map(async (s) => s.getReport());
 
       const strs = await Promise.all(dataReports);
-      return strs.join();
+      return strs.join("");
     } catch (e) {
       console.log('reporting error', e);
     }
@@ -127,7 +127,7 @@ class Aggregator {
     try {
       configJSON = JSON.parse(configString);
     } catch(e) {
-      console.log(`Error creating aggregator from config "${configString}"`);
+      console.log(`Error parsing JSON "${configString}"`);
       return;
     }
 
