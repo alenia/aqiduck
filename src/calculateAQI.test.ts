@@ -1,13 +1,28 @@
 import calculateAQI from './calculateAQI';
 
 test("It turns raw PM 2.5 numbers into AQI", () => {
-  expect(calculateAQI(6)).toEqual(25);
-  expect(calculateAQI(12)).toEqual(50);
-  expect(calculateAQI(20)).toEqual(68);
-  expect(calculateAQI(40)).toEqual(112);
-  expect(calculateAQI(80)).toEqual(164);
-  expect(calculateAQI(200)).toEqual(250);
-  expect(calculateAQI(300)).toEqual(350);
-  expect(calculateAQI(400)).toEqual(434);
-  expect(calculateAQI(600)).toEqual(600); // Return raw PM when above 500
+  expect(calculateAQI(6).AQI).toEqual(25);
+  expect(calculateAQI(6).category).toEqual("Good");
+  expect(calculateAQI(6).colorRGB).toEqual("rgb(128,242,0)");
+  expect(calculateAQI(12).AQI).toEqual(50);
+  expect(calculateAQI(12).category).toEqual("Good");
+  expect(calculateAQI(12).colorRGB).toEqual("rgb(255,255,0)");
+  expect(calculateAQI(20).AQI).toEqual(68);
+  expect(calculateAQI(20).category).toEqual("Moderate");
+  expect(calculateAQI(20).colorRGB).toEqual("rgb(255,211,0)");
+  expect(calculateAQI(40).AQI).toEqual(112);
+  expect(calculateAQI(40).category).toEqual("Unhealthy for Sensitive Groups");
+  expect(calculateAQI(40).colorRGB).toEqual("rgb(255,98,0)");
+  expect(calculateAQI(80).AQI).toEqual(164);
+  expect(calculateAQI(80).category).toEqual("Unhealthy");
+  expect(calculateAQI(80).colorRGB).toEqual("rgb(229,0,20)");
+  expect(calculateAQI(200).AQI).toEqual(250);
+  expect(calculateAQI(200).category).toEqual("Very Unhealthy");
+  expect(calculateAQI(300).AQI).toEqual(350);
+  expect(calculateAQI(300).category).toEqual("Hazardous");
+  expect(calculateAQI(300).colorRGB).toEqual("rgb(126,0,35)");
+  expect(calculateAQI(400).AQI).toEqual(434);
+  expect(calculateAQI(600).AQI).toEqual(600); // Return raw PM when above 500
+  expect(calculateAQI(600).category).toEqual("Unknown");
+  expect(calculateAQI(600).colorRGB).toEqual("rgb(66,0,33)");
 });

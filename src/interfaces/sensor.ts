@@ -1,5 +1,6 @@
 export interface sensorData {
   AQI?: number;
+  AQICategory?: string;
   temperature?: number;
   error?: any;
 }

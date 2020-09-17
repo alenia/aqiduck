@@ -25,8 +25,11 @@ export default class PurpleAirSensor implements Sensor {
       const currentPM2_5 = stats["pm2.5"];
       const tenMinuteAveragePM2_5 = stats["pm2.5_10minute"];
 
+      const aqiData = calculateAQI(tenMinuteAveragePM2_5)
+
       return {
-        AQI: calculateAQI(tenMinuteAveragePM2_5),
+        AQICategory: aqiData.category,
+        AQI: aqiData.AQI,
         temperature: results.temperature_a - 8
       };
     } catch(error) {
