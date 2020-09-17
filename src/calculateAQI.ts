@@ -6,6 +6,7 @@ export interface aqiData {
   category?: string;
   AQI: number,
   colorRGB?: string;
+  colorHex?: string;
 }
 
 export default function(basePM2_5: number) : aqiData {
@@ -17,18 +18,27 @@ export default function(basePM2_5: number) : aqiData {
   const breakpoint = aqiBreakpoints[breakpointIndex];
   const unknownColor : [number, number, number] = [66,0,33]
 
-  if(!breakpoint) { return { category: "Unknown", AQI: basePM2_5, colorRGB: colorString(unknownColor) } }
+  if(!breakpoint) {
+    return {
+      category: "Unknown",
+      AQI: basePM2_5,
+      colorRGB: colorRGBString(unknownColor),
+      colorHex: colorHexString(unknownColor)
+    }
+  }
 
   const categoryAQIRange = breakpoint.AQI[1] - breakpoint.AQI[0];
   const pmProportion = (basePM2_5 - breakpoint.pm2_5[0])/(breakpoint.pm2_5[1] - breakpoint.pm2_5[0]);
   const aqi = Math.round(categoryAQIRange * pmProportion + breakpoint.AQI[0]);
 
   const nextCategoryColor = aqiBreakpoints[breakpointIndex + 1] ? aqiBreakpoints[breakpointIndex + 1].color : unknownColor;
+  const blendedColor = blendRGBColors(breakpoint.color, nextCategoryColor, pmProportion)
 
   return {
     category: breakpoint.name,
     AQI: aqi,
-    colorRGB: colorString(blendRGBColors(breakpoint.color, nextCategoryColor, pmProportion))
+    colorRGB: colorRGBString(blendedColor),
+    colorHex: colorHexString(blendedColor)
   };
 }
 
@@ -46,6 +56,13 @@ function weightedInteger(v1: number, v2: number, weight: number) : number {
   return Math.round(v1 * (1 - weight) + v2 * weight)
 }
 
-function colorString(rgbArray: [number, number, number]) : string {
+function colorRGBString(rgbArray: [number, number, number]) : string {
   return `rgb(${rgbArray.join(',')})`;
+}
+
+function colorHexString(rgbArray: [number, number, number]) : string {
+  const convertValue = (value: number) : string => {
+    return `0${value.toString(16)}`.slice(-2);
+  }
+  return `#${rgbArray.map(convertValue).join('')}`;
 }

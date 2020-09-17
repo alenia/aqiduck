@@ -7,6 +7,7 @@ test("It turns raw PM 2.5 numbers into AQI", () => {
   expect(calculateAQI(12).AQI).toEqual(50);
   expect(calculateAQI(12).category).toEqual("Good");
   expect(calculateAQI(12).colorRGB).toEqual("rgb(255,255,0)");
+  expect(calculateAQI(12).colorHex).toEqual("#ffff00");
   expect(calculateAQI(20).AQI).toEqual(68);
   expect(calculateAQI(20).category).toEqual("Moderate");
   expect(calculateAQI(20).colorRGB).toEqual("rgb(255,211,0)");
@@ -25,4 +26,5 @@ test("It turns raw PM 2.5 numbers into AQI", () => {
   expect(calculateAQI(600).AQI).toEqual(600); // Return raw PM when above 500
   expect(calculateAQI(600).category).toEqual("Unknown");
   expect(calculateAQI(600).colorRGB).toEqual("rgb(66,0,33)");
+  expect(calculateAQI(600).colorHex).toEqual("#420021");
 });

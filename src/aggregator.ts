@@ -14,10 +14,14 @@ interface sensorJson {
   AQIThresholds?: [number, number];
 }
 
-const reportData = function({AQI, temperature} : sensorData, prefix : string) {
+const reportData = function({AQI, AQICategory, AQIColorHex, temperature} : sensorData, prefix : string) {
   let output = "";
   if(AQI === 0 || AQI) {
-    output += `${prefix} AQI: ${AQI}\n`;
+    output += `${prefix} AQI: ${AQI}`;
+    if(AQICategory && AQIColorHex) {
+      output += ` (${AQICategory} ${AQIColorHex})`
+    }
+    output += '\n'
   }
   if(temperature) {
     output += `${prefix} Temperature: ${temperature}\n`;

@@ -1,6 +1,7 @@
 export interface sensorData {
   AQI?: number;
   AQICategory?: string;
+  AQIColorHex?: string;
   temperature?: number;
   error?: any;
 }

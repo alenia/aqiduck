@@ -29,6 +29,7 @@ export default class PurpleAirSensor implements Sensor {
 
       return {
         AQICategory: aqiData.category,
+        AQIColorHex: aqiData.colorHex,
         AQI: aqiData.AQI,
         temperature: results.temperature_a - 8
       };
