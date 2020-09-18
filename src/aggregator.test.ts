@@ -1,4 +1,4 @@
-import Aggregator, { DecoratedSensor } from './aggregator';
+import Aggregator, { DecoratedSensor, monitoringTypes } from './aggregator';
 
 let outdoorSensorData = {}, indoorSensorData = {};
 
@@ -114,6 +114,52 @@ describe("DecoratedSensor", () => {
       outdoorSensor.getData.mockClear();
       expect(await sensorWithoutThresholds.monitorThresholds()).toBeFalsy();
       expect(outdoorSensor.getData).not.toHaveBeenCalled();
+    });
+    describe('Dynamic monitoring', () => {
+      it.only('resets the thresholds whenever a threshold is crossed', async () => {
+        const sensor = new DecoratedSensor({
+          name: "Sensor",
+          sensor: outdoorSensor,
+          AQIMonitoring: monitoringTypes.dynamic
+        });
+        expect.assertions(14);
+        outdoorSensorData = { AQI: 54 };
+        let output = await sensor.getReport();
+        outdoorSensorData = { AQI: 55 };
+        output = await sensor.monitorThresholds();
+        expect(output).toBeFalsy();
+        // up a bunch
+        outdoorSensorData = { AQI: 61 };
+        output = await sensor.monitorThresholds();
+        expect(output).not.toMatch("lower");
+        expect(output).toMatch("higher");
+        expect(output).toMatch('AQI: 61');
+        // down a bunch
+        outdoorSensorData = { AQI: 52 };
+        output = await sensor.monitorThresholds();
+        expect(output).toMatch("lower");
+        expect(output).not.toMatch("higher");
+        expect(output).toMatch('AQI: 52');
+        // up a little
+        outdoorSensorData = { AQI: 55 };
+        output = await sensor.monitorThresholds();
+        expect(output).toBeFalsy()
+        // a little below the center of the threshold
+        outdoorSensorData = { AQI: 49 };
+        output = await sensor.monitorThresholds();
+        expect(output).toBeFalsy()
+        // further below the center of the threshold
+        outdoorSensorData = { AQI: 47 };
+        output = await sensor.monitorThresholds();
+        expect(output).toMatch("lower");
+        expect(output).not.toMatch("higher");
+        expect(output).toMatch('AQI: 47');
+        // up a bunch
+        outdoorSensorData = { AQI: 61 };
+        output = await sensor.monitorThresholds();
+        expect(output).not.toMatch("lower");
+        expect(output).toMatch("higher");
+      });
     });
   });
   describe('.getReport', () => {

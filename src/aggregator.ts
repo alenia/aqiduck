@@ -1,10 +1,16 @@
 import { sensorData, Sensor } from './interfaces/sensor';
 import sensorMap from './sensorMap';
 
+export enum monitoringTypes {
+  dynamic = "dynamic",
+  static = "static"
+}
+
 interface labeledSensor {
   name: string;
   sensor: Sensor;
   AQIThresholds?: [number, number];
+  AQIMonitoring?: monitoringTypes;
 }
 
 interface sensorJson {
@@ -12,6 +18,7 @@ interface sensorJson {
   type: string;
   id: number;
   AQIThresholds?: [number, number];
+  AQIMonitoring?: monitoringTypes;
 }
 
 const reportData = function({AQI, AQICategory, AQIColorHex, temperature} : sensorData, prefix : string) {
@@ -39,13 +46,15 @@ export class DecoratedSensor {
   name: string;
   sensor: Sensor;
   AQIThresholds: [number,number];
+  AQIMonitoring?: monitoringTypes;
   private currentAQINotifyBracket: notifyBracket;
 
-  constructor({ name, sensor, AQIThresholds } : labeledSensor) {
+  constructor({ name, sensor, AQIThresholds, AQIMonitoring } : labeledSensor) {
     this.sensor = sensor;
     this.name = name;
     //TODO this should probably be an array of two values. Also do validation that low is below high
     this.AQIThresholds = AQIThresholds;
+    this.AQIMonitoring = AQIThresholds ? monitoringTypes.static : AQIMonitoring;
     this.currentAQINotifyBracket = notifyBracket.none;
   }
 
@@ -57,7 +66,8 @@ export class DecoratedSensor {
     console.log(this.name, reportData(data, this.currentAQINotifyBracket));
     const newBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
     if(newBracket && newBracket !== this.currentAQINotifyBracket) {
-      this.currentAQINotifyBracket = newBracket;
+      this.resetAQIThresholds(data.AQI);
+      this.currentAQINotifyBracket = this.calculateAQINotifyBracket(data.AQI);
       return `QUACK!!! AQI is getting ${newBracket}er!!\n\n${reportData(data, this.name)}`
     }
     return ""
@@ -65,7 +75,8 @@ export class DecoratedSensor {
 
   async getReport() : Promise<string | Error> {
     const data = await this.getData();
-    // Reset thresholds brackets since we're reporting data anyway
+    // Reset thresholds and brackets since we're reporting data anyway
+    this.resetAQIThresholds(data.AQI);
     this.currentAQINotifyBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
     return reportData(data, this.name);
   }
@@ -79,6 +90,11 @@ export class DecoratedSensor {
     }
   }
 
+  private resetAQIThresholds(AQI : number): void {
+    if(this.AQIMonitoring !== monitoringTypes.dynamic) { return };
+    console.log("resetting thresholds", [AQI - 4, AQI + 4]);
+    this.AQIThresholds = [AQI - 4, AQI + 4];
+  }
 
   private calculateAQINotifyBracket(AQI : number): notifyBracket {
     if(!this.AQIThresholds || this.AQIThresholds.length < 2) {
@@ -137,12 +153,15 @@ class Aggregator {
 
     const sensors = configJSON.sensors.map((sensorData : sensorJson) => {
       console.log("setting up sensor", sensorData);
+      //TODO: validate the fields on the sensor JSON
+
       const Sensor = sensorMap[sensorData.type];
       if(Sensor) {
         return {
           name: sensorData.name,
           sensor: new Sensor(sensorData),
           AQIThresholds: sensorData.AQIThresholds,
+          AQIMonitoring: sensorData.AQIMonitoring,
         }
       }
       console.log(`Unknown sensor "${sensorData.type}"`);
