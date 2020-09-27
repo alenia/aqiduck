@@ -57,6 +57,17 @@ export default class AqiDuckController {
       }
       const controller = new AqiDuckController({ slackReporter, aggregator });
       controller.start()
+
+      process.on('SIGINT', async function() {
+        console.log("Caught interrupt signal");
+        try {
+          await slackReporter.postMessage("Ducking out. See you!")
+          process.exit();
+        } catch {
+          console.log("error in postMessage, exiting");
+          process.exit();
+        }
+      });
     })
   }
 }

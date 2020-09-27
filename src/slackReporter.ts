@@ -31,7 +31,7 @@ class SlackReporter {
     this.channel = channel;
   }
 
-  postMessage(text: string) : void {
+  async postMessage(text: string) : Promise<void> {
     //TODO: Sometimes I get things that aren't strings from the purpleAir JSON. fix this there instead of type checking
     if(typeof(text) !== "string") {
       console.log("Message not a string, not posting!", text, typeof(text));
@@ -44,7 +44,7 @@ class SlackReporter {
       return;
     }
 
-    web.chat.postMessage({
+    return web.chat.postMessage({
       channel: this.channel.id,
       text,
     }).then(() => { console.log(`Message posted in ${this.channel.name}!`) })
