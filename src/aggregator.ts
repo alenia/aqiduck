@@ -68,7 +68,8 @@ export class DecoratedSensor {
     if(newBracket && newBracket !== this.currentAQINotifyBracket) {
       this.resetAQIThresholds(data.AQI);
       this.currentAQINotifyBracket = this.calculateAQINotifyBracket(data.AQI);
-      return `QUACK!!! AQI is getting ${newBracket}er!!\n\n${reportData(data, this.name)}`
+      const prefix = newBracket === notifyBracket.high ? ":arrow_up: QUACK!!!" : ":arrow_down: quack!"
+      return `${prefix} ${this.name} AQI is getting ${newBracket}er!!\n\n${reportData(data, this.name)}`
     }
     return ""
   }
