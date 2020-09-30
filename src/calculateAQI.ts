@@ -12,7 +12,7 @@ export interface aqiData {
 export default function(basePM2_5: number) : aqiData {
   const breakpointIndex = aqiBreakpoints.findIndex((b : breakpoint) : boolean => (
     b.pm2_5[0] <= basePM2_5 &&
-    basePM2_5 <= b.pm2_5[1]
+    basePM2_5 < b.pm2_5[1] + .1
   ));
 
   const breakpoint = aqiBreakpoints[breakpointIndex];
