@@ -41,33 +41,35 @@ export default class AqiDuckController {
     }
   }
 
+  static async subscribeToAggregatorsForReporter(slackReporter: SlackReporter) : Promise<void> {
+    const aggregatorConfig = await slackReporter.getConfig();
+    if(!aggregatorConfig) {
+      slackReporter.postMessage(`Trying to set up AQIDuck but there is no aggregator config`);
+      return;
+    }
+    //TODO: validate config here
+    const aggregator = Aggregator.fromConfig(aggregatorConfig);
+    if(!aggregator) {
+      slackReporter.postMessage(`Error setting up reporter from config ${aggregatorConfig}`)
+      return;
+    }
+    const controller = new AqiDuckController({ slackReporter, aggregator });
+    controller.start()
+
+    process.on('SIGINT', async function() {
+      console.log("Caught interrupt signal");
+      try {
+        await slackReporter.postMessage("Ducking out. See you!")
+        process.exit();
+      } catch {
+        console.log("error in postMessage, exiting");
+        process.exit();
+      }
+    });
+  }
+
   static async subscribeAll() : Promise<void> {
     const reporters = await SlackReporter.subscribeAll();
-    reporters.forEach(async (slackReporter) => {
-      const aggregatorConfig = await slackReporter.getConfig();
-      if(!aggregatorConfig) {
-        slackReporter.postMessage(`Trying to set up AQIDuck but there is no aggregator config`);
-        return;
-      }
-      //TODO: validate config here
-      const aggregator = Aggregator.fromConfig(aggregatorConfig);
-      if(!aggregator) {
-        slackReporter.postMessage(`Error setting up reporter from config ${aggregatorConfig}`)
-        return;
-      }
-      const controller = new AqiDuckController({ slackReporter, aggregator });
-      controller.start()
-
-      process.on('SIGINT', async function() {
-        console.log("Caught interrupt signal");
-        try {
-          await slackReporter.postMessage("Ducking out. See you!")
-          process.exit();
-        } catch {
-          console.log("error in postMessage, exiting");
-          process.exit();
-        }
-      });
-    })
+    reporters.forEach(AqiDuckController.subscribeToAggregatorsForReporter);
   }
 }

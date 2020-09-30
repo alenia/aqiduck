@@ -92,7 +92,7 @@ export class DecoratedSensor {
   }
 
   private resetAQIThresholds(AQI : number): void {
-    if(this.AQIMonitoring !== monitoringTypes.dynamic) { return };
+    if(this.AQIMonitoring !== monitoringTypes.dynamic) { return }
     console.log("resetting thresholds", [AQI - 4, AQI + 4]);
     this.AQIThresholds = [AQI - 4, AQI + 4];
   }
