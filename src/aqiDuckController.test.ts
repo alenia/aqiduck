@@ -6,6 +6,7 @@ jest.mock('./aggregator', () => {
 
 const mockSlackReporterA = {
   postMessage: jest.fn(),
+  getChannelName: jest.fn(),
   getConfig: jest.fn().mockImplementation(() => {
     return Promise.resolve("Mock config A");
   })
@@ -13,6 +14,7 @@ const mockSlackReporterA = {
 
 const mockSlackReporterB = {
   postMessage: jest.fn(),
+  getChannelName: jest.fn(),
   getConfig: jest.fn().mockImplementation(() => {
     return Promise.resolve("Mock config B");
   })

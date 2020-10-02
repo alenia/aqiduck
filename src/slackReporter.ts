@@ -63,6 +63,10 @@ class SlackReporter {
     return config;
   }
 
+  getChannelName() : string {
+    return this.channel.name;
+  }
+
   static async subscribeAll(): Promise<Array<SlackReporter>> {
     const { channels } = await web.users.conversations() as channelListResult;
     return channels.map((channel) => {

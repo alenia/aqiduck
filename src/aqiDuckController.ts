@@ -27,21 +27,28 @@ export default class AqiDuckController {
     });
   }
 
-  introduce() : void {
+  onSetup() : void {
+    console.log('saying hello to ', this.slackReporter.getChannelName());
     this.slackReporter.postMessage("Hello I'm AQIDuck. Let me tell you about the air quality.");
   }
 
+  onExit() : Promise<void> {
+    console.log('saying goodbye to ', this.slackReporter.getChannelName());
+    return this.slackReporter.postMessage("Ducking out. See you!");
+  }
+
   start() : void {
-    this.introduce();
+    this.onSetup();
     if(process.env.NODE_ENV==="test") {
       this.report();
     } else {
       this.report();
       setInterval(() => this.monitorAndNotify(), 5000)
     }
+
   }
 
-  static async subscribeToAggregatorsForReporter(slackReporter: SlackReporter) : Promise<void> {
+  static async subscribeToAggregatorsForReporter(slackReporter: SlackReporter) : Promise<AqiDuckController> {
     const aggregatorConfig = await slackReporter.getConfig();
     if(!aggregatorConfig) {
       slackReporter.postMessage(`Trying to set up AQIDuck but there is no aggregator config`);
@@ -54,22 +61,23 @@ export default class AqiDuckController {
       return;
     }
     const controller = new AqiDuckController({ slackReporter, aggregator });
-    controller.start()
+    controller.start();
+    return controller;
+  }
+
+  static async subscribeAll() : Promise<void> {
+    const reporters = await SlackReporter.subscribeAll();
+    const controllerPromises = reporters.map(AqiDuckController.subscribeToAggregatorsForReporter);
 
     process.on('SIGINT', async function() {
       console.log("Caught interrupt signal");
       try {
-        await slackReporter.postMessage("Ducking out. See you!")
+        await Promise.all(controllerPromises.map((cp) => cp.then((c) => c.onExit())));
         process.exit();
       } catch {
         console.log("error in postMessage, exiting");
         process.exit();
       }
     });
-  }
-
-  static async subscribeAll() : Promise<void> {
-    const reporters = await SlackReporter.subscribeAll();
-    reporters.forEach(AqiDuckController.subscribeToAggregatorsForReporter);
   }
 }
