@@ -31,7 +31,7 @@ export default class PurpleAirSensor implements Sensor {
         AQICategory: aqiData.category,
         AQIColorHex: aqiData.colorHex,
         AQI: aqiData.AQI,
-        temperature: results.temperature_a - 8
+        temperature: calculateTemperature(results)
       };
     } catch(error) {
         console.log("Error getting data for PurpleAir sensor", this);
@@ -40,4 +40,14 @@ export default class PurpleAirSensor implements Sensor {
         return { error };
     }
   }
+}
+
+function calculateTemperature({ temperature_a, model }: { temperature_a: number, model: string }) : number {
+  if(model === "PA-I") {
+    return temperature_a - 10;
+  }
+  if(model !== "PA-II") {
+    console.log("Calculating temperature for unknown model", model);
+  }
+  return temperature_a - 8;
 }
