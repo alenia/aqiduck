@@ -6,7 +6,7 @@ jest.mock('./aggregator', () => {
 
 const mockSlackReporterA = {
   postMessage: jest.fn(),
-  getChannelName: jest.fn(),
+  getChannelName: () => "Reporter A",
   getConfig: jest.fn().mockImplementation(() => {
     return Promise.resolve("Mock config A");
   })
@@ -14,7 +14,7 @@ const mockSlackReporterA = {
 
 const mockSlackReporterB = {
   postMessage: jest.fn(),
-  getChannelName: jest.fn(),
+  getChannelName: () => "Reporter B",
   getConfig: jest.fn().mockImplementation(() => {
     return Promise.resolve("Mock config B");
   })
@@ -36,7 +36,7 @@ describe(".subscribeAll", () => {
   it('should report for each controller', async () => {
     expect.assertions(2);
     await AqiDuckController.subscribeAll();
-    await flushPromises;
+    await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
     expect(mockSlackReporterB.postMessage).toHaveBeenCalledWith("I am a report for Mock config B")
   });
