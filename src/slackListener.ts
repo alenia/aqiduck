@@ -2,11 +2,13 @@
 const { createEventAdapter } = require('@slack/events-api');
 const slackEvents = createEventAdapter(process.env.SLACK_SIGNING_SECRET);
 const port = process.env.PORT || 3000;
+import { ControllerRegistry } from './aqiDuckController';
 
 export default function attachListeners() : void {
   // Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
   slackEvents.on('app_mention', (event : any) => {
     console.log(`Received a message event: user ${event.user} in channel ${event.channel} says ${event.text}`);
+    ControllerRegistry[event.channel].handleEvent(event);
   });
 
   // Handle errors (see `errorCodes` export)

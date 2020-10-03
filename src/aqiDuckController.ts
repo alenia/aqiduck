@@ -1,13 +1,17 @@
 import SlackReporter from './slackReporter';
 import Aggregator from './aggregator';
 
+export const ControllerRegistry: Record<string, AqiDuckController> = {};
+
 export default class AqiDuckController {
   aggregator: Aggregator;
   slackReporter: SlackReporter;
+  channelId: string;
   error: boolean;
 
   constructor(slackReporter: SlackReporter) {
     this.slackReporter = slackReporter;
+    this.channelId = slackReporter.id;
     this.error = false;
   }
 
@@ -50,6 +54,11 @@ export default class AqiDuckController {
     });
   }
 
+  //TODO figure out slack event type
+  handleEvent(event : any) : void {
+    this.slackReporter.postMessage("Back atcha");
+  }
+
   onStart() : void {
     console.log('saying hello to ', this.getChannelName());
     this.slackReporter.postMessage("Hello I'm AQIDuck. Let me tell you about the air quality.");
@@ -75,6 +84,7 @@ export default class AqiDuckController {
 
   static async startForReporter(slackReporter: SlackReporter) : Promise<AqiDuckController> {
     const controller = new AqiDuckController(slackReporter);
+    ControllerRegistry[slackReporter.id] = controller;
     await controller.start();
     return controller;
   }
