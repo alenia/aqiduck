@@ -92,6 +92,10 @@ export default class AqiDuckController {
         this.slackReporter.postMessage('Monitoring is already running');
         return;
       }
+      if(!this.aggregator) {
+        this.slackReporter.postMessage('Nothing to monitor');
+        return;
+      }
       this.monitorAndNotify();
       this.slackReporter.postMessage('Monitoring resumed');
       this.report();
