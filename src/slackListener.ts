@@ -6,6 +6,7 @@ import { ControllerRegistry } from './aqiDuckController';
 
 export default function attachListeners() : void {
   if(process.env.NODE_ENV === "test") {
+    console.log('not starting a server in test');
     return
   }
   // Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
@@ -18,6 +19,7 @@ export default function attachListeners() : void {
   slackEvents.on('error', console.error);
 
   // Start a basic HTTP server
+  console.log(`attempting to start a server with port ${port}`);
   slackEvents.start(port).then(() => {
     // Listening on path '/slack/events' by default
     console.log(`server listening on port ${port}`);
