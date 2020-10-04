@@ -18,7 +18,6 @@ const indoorSensor = {
 //TODO: once I have aggregator.js converted to typescript set this type
 let aggregator: Aggregator;
 
-
 beforeEach(() => {
   aggregator = new Aggregator([{ name: "Outdoor", sensor: outdoorSensor}, {name: "Indoor", sensor: indoorSensor}]);
   indoorSensorData = {};

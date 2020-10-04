@@ -1,5 +1,5 @@
 // Initialize using signing secret from environment variables
-const { createEventAdapter } = require('@slack/events-api');
+const { createEventAdapter } = require('@slack/events-api'); //eslint-disable-line
 const slackEvents = createEventAdapter(process.env.SLACK_SIGNING_SECRET);
 const port = process.env.PORT || 3000;
 import { ControllerRegistry } from './aqiDuckController';
