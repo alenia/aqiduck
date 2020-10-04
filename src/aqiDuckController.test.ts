@@ -79,6 +79,19 @@ describe("handleEvent", () => {
     expect(mockSlackReporterA.postMessage).not.toHaveBeenCalledWith("Hello there!")
   });
 
+  xit("Stops reporting and updates the sensor JSON if you say stop reporting", async () => {
+    const controller = new AqiDuckController(mockSlackReporterA);
+    await controller.setupAggregator();
+    controller.handleEvent({ text: '<@USERNAMETHING> Stop monitoring' });
+    //It should stop the interval
+  });
+
+  it.todo("Reports dynamically if you tell it to with the phrase 'Dynamic AQI monitoring'");
+  //controller.handleEvent({ text: '<@USERNAMETHING> Dynamic AQI monitoring' });
+
+  it.todo("Reports statically if you tell it to");
+  //controller.handleEvent({ text: '<@USERNAMETHING> Monitor AQI [40,50]' });
+
   it("Lets you know if the event text is unknown", async () => {
     const controller = new AqiDuckController(mockSlackReporterA);
     await controller.setupAggregator();
