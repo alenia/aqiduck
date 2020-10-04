@@ -1,8 +1,16 @@
+const monitorAggregator = jest.fn().mockImplementation(() => Promise.resolve('tick'))
 jest.mock('./aggregator', () => {
-  return { fromConfig: jest.fn().mockImplementation((config) => {return {
-    report: jest.fn().mockImplementation(() => { return Promise.resolve(`I am a report for ${config}`) })
-  }}) };
+  return {
+    fromConfig: jest.fn().mockImplementation((config) => {
+      return {
+        report: jest.fn().mockImplementation(() => { return Promise.resolve(`I am a report for ${config}`) }),
+        monitorAndNotify: monitorAggregator
+      }
+    }),
+  };
 });
+
+jest.useFakeTimers();
 
 const mockSlackReporterA = {
   postMessage: jest.fn(),
@@ -79,11 +87,16 @@ describe("handleEvent", () => {
     expect(mockSlackReporterA.postMessage).not.toHaveBeenCalledWith("Hello there!")
   });
 
-  xit("Stops reporting and updates the sensor JSON if you say stop reporting", async () => {
+  it("Stops reporting if you say stop monitoring", async () => {
     const controller = new AqiDuckController(mockSlackReporterA);
     await controller.setupAggregator();
+    controller.monitorAndNotify();
+    jest.runOnlyPendingTimers();
+    expect(monitorAggregator).toHaveBeenCalled();
+    monitorAggregator.mockClear();
     controller.handleEvent({ text: '<@USERNAMETHING> Stop monitoring' });
-    //It should stop the interval
+    jest.runOnlyPendingTimers();
+    expect(monitorAggregator).not.toHaveBeenCalled();
   });
 
   it.todo("Reports dynamically if you tell it to with the phrase 'Dynamic AQI monitoring'");
