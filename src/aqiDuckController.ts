@@ -40,6 +40,7 @@ export default class AqiDuckController {
   }
 
   monitorAndNotify() : void {
+    if(!this.aggregator) { return }
     const monitoringFn = () => {
       this.aggregator.monitorAndNotify().then((notification) => {
         if(!notification) { return }
@@ -67,9 +68,15 @@ export default class AqiDuckController {
   handleEvent(event : any) : void {
     if(event.text.match(/(\bhello\b|\bhi\b)/i)) {
       this.slackReporter.postMessage("Hello there!");
-    } else if(event.text.match(/report/i)) {
+      return;
+    }
+
+    if(event.text.match(/report/i)) {
       this.report()
-    } else if(event.text.match(/stop monitoring/i)) {
+      return;
+    }
+
+    if(event.text.match(/stop monitoring/i)) {
       if(!this.interval) {
         this.slackReporter.postMessage('Nothing to stop.');
         return;
@@ -77,9 +84,21 @@ export default class AqiDuckController {
       clearInterval(this.interval);
       this.interval = undefined;
       this.slackReporter.postMessage('Monitoring stopped.');
-    } else {
-      this.slackReporter.postMessage("I'm not sure how to help with that.");
+      return;
     }
+
+    if(event.text.match(/resume monitoring/i)) {
+      if(this.interval) {
+        this.slackReporter.postMessage('Monitoring is already running');
+        return;
+      }
+      this.monitorAndNotify();
+      this.slackReporter.postMessage('Monitoring resumed');
+      this.report();
+      return;
+    }
+
+    this.slackReporter.postMessage("I'm not sure how to help with that.");
   }
 
   onStart() : void {

@@ -87,7 +87,7 @@ describe("handleEvent", () => {
     expect(mockSlackReporterA.postMessage).not.toHaveBeenCalledWith("Hello there!")
   });
 
-  it("Stops reporting if you say stop monitoring", async () => {
+  it("Stops reporting if you say stop monitoring, and resumes when you say resume", async () => {
     const controller = new AqiDuckController(mockSlackReporterA);
     await controller.setupAggregator();
     controller.monitorAndNotify();
@@ -97,6 +97,9 @@ describe("handleEvent", () => {
     controller.handleEvent({ text: '<@USERNAMETHING> Stop monitoring' });
     jest.runOnlyPendingTimers();
     expect(monitorAggregator).not.toHaveBeenCalled();
+    controller.handleEvent({ text: '<@USERNAMETHING> Resume monitoring' });
+    jest.runOnlyPendingTimers();
+    expect(monitorAggregator).toHaveBeenCalled();
   });
 
   it.todo("Reports dynamically if you tell it to with the phrase 'Dynamic AQI monitoring'");
