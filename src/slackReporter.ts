@@ -23,12 +23,14 @@ const web = new WebClient(process.env.SLACK_TOKEN);
 
 class SlackReporter {
   channel: basicChannel;
+  id: string;
   topic: {
     value: string;
   };
 
   constructor(channel : basicChannel) {
     this.channel = channel;
+    this.id = channel.id;
   }
 
   async postMessage(text: string) : Promise<void> {

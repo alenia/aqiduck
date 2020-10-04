@@ -1,13 +1,41 @@
 import SlackReporter from './slackReporter';
 import Aggregator from './aggregator';
 
+export const ControllerRegistry: Record<string, AqiDuckController> = {};
+
 export default class AqiDuckController {
   aggregator: Aggregator;
   slackReporter: SlackReporter;
+  channelId: string;
+  error: boolean;
 
-  constructor({ slackReporter, aggregator } : { slackReporter: SlackReporter, aggregator: Aggregator }) {
-    this.slackReporter = slackReporter
-    this.aggregator = aggregator
+  //TODO: I can't figure out how to test this if they type is SlackReporter
+  constructor(slackReporter: any) {
+    this.slackReporter = slackReporter;
+    this.channelId = slackReporter.id;
+    this.error = false;
+  }
+
+  async setupAggregator() : Promise<void> {
+    const aggregatorConfig = await this.slackReporter.getConfig();
+    if(!aggregatorConfig) {
+      console.log('Trying to set up AQIDuck but there is no aggregator config', this.getChannelName());
+      this.slackReporter.postMessage('Trying to set up AQIDuck but there is no aggregator config');
+      this.error = true;
+      return;
+    }
+    //TODO: validate config here
+    this.aggregator = Aggregator.fromConfig(aggregatorConfig);
+    if(!this.aggregator) {
+      console.log(`Error setting up reporter from config ${aggregatorConfig}`, this.getChannelName());
+      this.slackReporter.postMessage(`Error setting up reporter from config ${aggregatorConfig}`);
+      this.error = true;
+      return;
+    }
+  }
+
+  getChannelName() : string {
+    return this.slackReporter.getChannelName();
   }
 
   monitorAndNotify() : void {
@@ -15,30 +43,47 @@ export default class AqiDuckController {
       if(!notification) { return }
       this.slackReporter.postMessage(notification);
     }).catch((error) => {
-      console.log("error getting aggregator notification", this.slackReporter.channel, error)
+      console.log("error getting aggregator notification", this.getChannelName(), error)
     });
   }
 
   report() : void {
+    if(!this.aggregator) {
+      this.slackReporter.postMessage("I'm not set up to give you a report!");
+      return
+    }
     this.aggregator.report().then((report) => {
       this.slackReporter.postMessage(report);
     }).catch((error) => {
-      console.log("error getting aggregator report", this.slackReporter.channel, error)
+      console.log("error getting aggregator report", this.getChannelName(), error)
     });
   }
 
-  onSetup() : void {
-    console.log('saying hello to ', this.slackReporter.getChannelName());
+  //TODO figure out slack event type
+  handleEvent(event : any) : void {
+    if(event.text.match(/(\bhello\b|\bhi\b)/i)) {
+      this.slackReporter.postMessage("Hello there!");
+    } else if(event.text.match(/report/i)) {
+      this.report()
+    } else {
+      this.slackReporter.postMessage("I'm not sure how to help with that.");
+    }
+  }
+
+  onStart() : void {
+    console.log('saying hello to ', this.getChannelName());
     this.slackReporter.postMessage("Hello I'm AQIDuck. Let me tell you about the air quality.");
   }
 
   onExit() : Promise<void> {
-    console.log('saying goodbye to ', this.slackReporter.getChannelName());
+    console.log('saying goodbye to ', this.getChannelName());
     return this.slackReporter.postMessage("Ducking out. See you!");
   }
 
-  start() : void {
-    this.onSetup();
+  async start() : Promise<void> {
+    await this.setupAggregator();
+    if(this.error) { return }
+    this.onStart();
     if(process.env.NODE_ENV==="test") {
       this.report();
     } else {
@@ -48,26 +93,16 @@ export default class AqiDuckController {
 
   }
 
-  static async subscribeToAggregatorsForReporter(slackReporter: SlackReporter) : Promise<AqiDuckController> {
-    const aggregatorConfig = await slackReporter.getConfig();
-    if(!aggregatorConfig) {
-      slackReporter.postMessage(`Trying to set up AQIDuck but there is no aggregator config`);
-      return;
-    }
-    //TODO: validate config here
-    const aggregator = Aggregator.fromConfig(aggregatorConfig);
-    if(!aggregator) {
-      slackReporter.postMessage(`Error setting up reporter from config ${aggregatorConfig}`)
-      return;
-    }
-    const controller = new AqiDuckController({ slackReporter, aggregator });
-    controller.start();
+  static async startForReporter(slackReporter: SlackReporter) : Promise<AqiDuckController> {
+    const controller = new AqiDuckController(slackReporter);
+    ControllerRegistry[slackReporter.id] = controller;
+    await controller.start();
     return controller;
   }
 
   static async subscribeAll() : Promise<void> {
     const reporters = await SlackReporter.subscribeAll();
-    const controllerPromises = reporters.map(AqiDuckController.subscribeToAggregatorsForReporter);
+    const controllerPromises = reporters.map(AqiDuckController.startForReporter);
 
     process.on('SIGINT', async function() {
       console.log("Caught interrupt signal");

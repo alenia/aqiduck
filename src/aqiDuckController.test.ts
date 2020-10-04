@@ -6,7 +6,7 @@ jest.mock('./aggregator', () => {
 
 const mockSlackReporterA = {
   postMessage: jest.fn(),
-  getChannelName: jest.fn(),
+  getChannelName: () => "Reporter A",
   getConfig: jest.fn().mockImplementation(() => {
     return Promise.resolve("Mock config A");
   })
@@ -14,7 +14,7 @@ const mockSlackReporterA = {
 
 const mockSlackReporterB = {
   postMessage: jest.fn(),
-  getChannelName: jest.fn(),
+  getChannelName: () => "Reporter B",
   getConfig: jest.fn().mockImplementation(() => {
     return Promise.resolve("Mock config B");
   })
@@ -32,12 +32,58 @@ function flushPromises() {
     return new Promise(resolve => setImmediate(resolve));
 }
 
+beforeEach(() => {
+  mockSlackReporterA.postMessage.mockClear()
+  mockSlackReporterB.postMessage.mockClear()
+});
+
 describe(".subscribeAll", () => {
   it('should report for each controller', async () => {
     expect.assertions(2);
     await AqiDuckController.subscribeAll();
-    await flushPromises;
+    await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
     expect(mockSlackReporterB.postMessage).toHaveBeenCalledWith("I am a report for Mock config B")
+  });
+});
+
+describe("handleEvent", () => {
+  it("sends a report if the event text says report", async () => {
+    const controller = new AqiDuckController(mockSlackReporterA);
+    controller.handleEvent({ text: '<@USERNAMETHING>REPORT' });
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I'm not set up to give you a report!")
+    mockSlackReporterA.postMessage.mockClear()
+    await controller.setupAggregator();
+    controller.handleEvent({ text: '<@USERNAMETHING> report' });
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
+  });
+
+  it("says hello if the event text says hello", async () => {
+    const controller = new AqiDuckController(mockSlackReporterA);
+    await controller.setupAggregator();
+
+    mockSlackReporterA.postMessage.mockClear()
+    controller.handleEvent({ text: '<@USERNAMETHING> Hello' });
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Hello there!")
+
+    mockSlackReporterA.postMessage.mockClear()
+    controller.handleEvent({ text: '<@USERNAMETHING> hi there' });
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Hello there!")
+
+    mockSlackReporterA.postMessage.mockClear()
+    controller.handleEvent({ text: '<@USERNAMETHING> high' });
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).not.toHaveBeenCalledWith("Hello there!")
+  });
+
+  it("Lets you know if the event text is unknown", async () => {
+    const controller = new AqiDuckController(mockSlackReporterA);
+    await controller.setupAggregator();
+    controller.handleEvent({ text: '<@USERNAMETHING> What' });
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I'm not sure how to help with that.")
   });
 });
