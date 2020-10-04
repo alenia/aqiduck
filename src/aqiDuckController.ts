@@ -9,7 +9,8 @@ export default class AqiDuckController {
   channelId: string;
   error: boolean;
 
-  constructor(slackReporter: SlackReporter) {
+  //TODO: I can't figure out how to test this if they type is SlackReporter
+  constructor(slackReporter: any) {
     this.slackReporter = slackReporter;
     this.channelId = slackReporter.id;
     this.error = false;
@@ -47,6 +48,10 @@ export default class AqiDuckController {
   }
 
   report() : void {
+    if(!this.aggregator) {
+      this.slackReporter.postMessage("I'm not set up to give you a report!");
+      return
+    }
     this.aggregator.report().then((report) => {
       this.slackReporter.postMessage(report);
     }).catch((error) => {
@@ -56,7 +61,13 @@ export default class AqiDuckController {
 
   //TODO figure out slack event type
   handleEvent(event : any) : void {
-    this.slackReporter.postMessage("Back atcha");
+    if(event.text.match(/(\bhello\b|\bhi\b)/i)) {
+      this.slackReporter.postMessage("Hello there!");
+    } else if(event.text.match(/report/i)) {
+      this.report()
+    } else {
+      this.slackReporter.postMessage("I'm not sure how to help with that.");
+    }
   }
 
   onStart() : void {
