@@ -64,10 +64,18 @@ export default class AqiDuckController {
     });
   }
 
+  docs() : string {
+    return `
+You can ask me to:
+  report
+  stop monitoring
+  resume monitoring`
+  }
+
   //TODO figure out slack event type
   handleEvent(event : any) : void {
     if(event.text.match(/(\bhello\b|\bhi\b)/i)) {
-      this.slackReporter.postMessage("Hello there!");
+      this.slackReporter.postMessage("Hello there!" + this.docs());
       return;
     }
 
@@ -102,7 +110,7 @@ export default class AqiDuckController {
       return;
     }
 
-    this.slackReporter.postMessage("I'm not sure how to help with that.");
+    this.slackReporter.postMessage("I'm not sure how to help with that." + this.docs());
   }
 
   onStart() : void {
