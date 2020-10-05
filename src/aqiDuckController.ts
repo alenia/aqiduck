@@ -73,7 +73,14 @@ You can ask me to:
   }
 
   //TODO figure out slack event type
-  handleEvent(event : any) : void {
+  async handleChannelTopicChange(event: any) : Promise<void> {
+    this.cleanup();
+    await this.slackReporter.postMessage("Reloading configuration");
+    this.start();
+  }
+
+  //TODO figure out slack event type
+  handleAppMention(event : any) : void {
     if(event.text.match(/(\bhello\b|\bhi\b)/i)) {
       this.slackReporter.postMessage("Hello there!" + this.docs());
       return;
@@ -89,8 +96,7 @@ You can ask me to:
         this.slackReporter.postMessage('Nothing to stop.');
         return;
       }
-      clearInterval(this.interval);
-      this.interval = undefined;
+      this.cleanup();
       this.slackReporter.postMessage('Monitoring stopped.');
       return;
     }
@@ -113,7 +119,7 @@ You can ask me to:
     this.slackReporter.postMessage("I'm not sure how to help with that." + this.docs());
   }
 
-  onStart() : void {
+  greet() : void {
     console.log('saying hello to ', this.getChannelName());
     this.slackReporter.postMessage("Hello I'm AQIDuck. Let me tell you about the air quality.");
   }
@@ -123,10 +129,14 @@ You can ask me to:
     return this.slackReporter.postMessage("Ducking out. See you!");
   }
 
+  cleanup() : void {
+    clearInterval(this.interval);
+    this.interval = undefined;
+  }
+
   async start() : Promise<void> {
     await this.setupAggregator();
     if(this.error) { return }
-    this.onStart();
     if(process.env.NODE_ENV==="test") {
       this.report();
     } else {
@@ -139,6 +149,7 @@ You can ask me to:
   static async startForReporter(slackReporter: SlackReporter) : Promise<AqiDuckController> {
     const controller = new AqiDuckController(slackReporter);
     ControllerRegistry[slackReporter.id] = controller;
+    await controller.greet();
     await controller.start();
     return controller;
   }
