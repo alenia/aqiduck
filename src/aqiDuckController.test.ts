@@ -1,8 +1,16 @@
+const monitorAggregator = jest.fn().mockImplementation(() => Promise.resolve('tick'))
 jest.mock('./aggregator', () => {
-  return { fromConfig: jest.fn().mockImplementation((config) => {return {
-    report: jest.fn().mockImplementation(() => { return Promise.resolve(`I am a report for ${config}`) })
-  }}) };
+  return {
+    fromConfig: jest.fn().mockImplementation((config) => {
+      return {
+        report: jest.fn().mockImplementation(() => { return Promise.resolve(`I am a report for ${config}`) }),
+        monitorAndNotify: monitorAggregator
+      }
+    }),
+  };
 });
+
+jest.useFakeTimers();
 
 const mockSlackReporterA = {
   postMessage: jest.fn(),
@@ -78,6 +86,58 @@ describe("handleEvent", () => {
     await flushPromises();
     expect(mockSlackReporterA.postMessage).not.toHaveBeenCalledWith("Hello there!")
   });
+
+  it("Stops reporting if you say stop monitoring, and resumes and reports when you say resume", async () => {
+    const controller = new AqiDuckController(mockSlackReporterA);
+    await controller.setupAggregator();
+    controller.monitorAndNotify();
+    jest.runOnlyPendingTimers();
+    expect(monitorAggregator).toHaveBeenCalled();
+    monitorAggregator.mockClear();
+    mockSlackReporterA.postMessage.mockClear()
+    controller.handleEvent({ text: '<@USERNAMETHING> Stop monitoring' });
+    jest.runOnlyPendingTimers();
+    expect(monitorAggregator).not.toHaveBeenCalled();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledTimes(1);
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Monitoring stopped.");
+    mockSlackReporterA.postMessage.mockClear()
+    controller.handleEvent({ text: '<@USERNAMETHING> Resume monitoring' });
+    jest.runOnlyPendingTimers();
+    expect(monitorAggregator).toHaveBeenCalled();
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Monitoring resumed");
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
+  });
+
+  it("Doesn't stop monitoring if there's nothing to stop", async () => {
+    const controller = new AqiDuckController(mockSlackReporterA);
+    await controller.setupAggregator();
+    controller.handleEvent({ text: '<@USERNAMETHING> Stop monitoring' });
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Nothing to stop.")
+  })
+
+  it("Doesn't resume monitoring if there's a running timer", async () => {
+    const controller = new AqiDuckController(mockSlackReporterA);
+    await controller.setupAggregator();
+    controller.monitorAndNotify();
+    controller.handleEvent({ text: '<@USERNAMETHING> Resume monitoring' });
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Monitoring is already running")
+  })
+
+  it("Doesn't resume monitoring if there's no aggregator set up", async () => {
+    const controller = new AqiDuckController(mockSlackReporterA);
+    controller.handleEvent({ text: '<@USERNAMETHING> Resume monitoring' });
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Nothing to monitor")
+  })
+
+  it.todo("Reports dynamically if you tell it to with the phrase 'Dynamic AQI monitoring'");
+  //controller.handleEvent({ text: '<@USERNAMETHING> Dynamic AQI monitoring' });
+
+  it.todo("Reports statically if you tell it to");
+  //controller.handleEvent({ text: '<@USERNAMETHING> Monitor AQI [40,50]' });
 
   it("Lets you know if the event text is unknown", async () => {
     const controller = new AqiDuckController(mockSlackReporterA);

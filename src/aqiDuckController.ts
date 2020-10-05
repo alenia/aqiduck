@@ -8,6 +8,7 @@ export default class AqiDuckController {
   slackReporter: SlackReporter;
   channelId: string;
   error: boolean;
+  interval: ReturnType<typeof setInterval>;
 
   //TODO: I can't figure out how to test this if they type is SlackReporter
   constructor(slackReporter: any) {
@@ -39,12 +40,16 @@ export default class AqiDuckController {
   }
 
   monitorAndNotify() : void {
-    this.aggregator.monitorAndNotify().then((notification) => {
-      if(!notification) { return }
-      this.slackReporter.postMessage(notification);
-    }).catch((error) => {
-      console.log("error getting aggregator notification", this.getChannelName(), error)
-    });
+    if(!this.aggregator) { return }
+    const monitoringFn = () => {
+      this.aggregator.monitorAndNotify().then((notification) => {
+        if(!notification) { return }
+        this.slackReporter.postMessage(notification);
+      }).catch((error) => {
+        console.log("error getting aggregator notification", this.getChannelName(), error)
+      })
+    }
+    this.interval = setInterval(monitoringFn, 5000);
   }
 
   report() : void {
@@ -63,11 +68,41 @@ export default class AqiDuckController {
   handleEvent(event : any) : void {
     if(event.text.match(/(\bhello\b|\bhi\b)/i)) {
       this.slackReporter.postMessage("Hello there!");
-    } else if(event.text.match(/report/i)) {
-      this.report()
-    } else {
-      this.slackReporter.postMessage("I'm not sure how to help with that.");
+      return;
     }
+
+    if(event.text.match(/report/i)) {
+      this.report()
+      return;
+    }
+
+    if(event.text.match(/stop monitoring/i)) {
+      if(!this.interval) {
+        this.slackReporter.postMessage('Nothing to stop.');
+        return;
+      }
+      clearInterval(this.interval);
+      this.interval = undefined;
+      this.slackReporter.postMessage('Monitoring stopped.');
+      return;
+    }
+
+    if(event.text.match(/resume monitoring/i)) {
+      if(this.interval) {
+        this.slackReporter.postMessage('Monitoring is already running');
+        return;
+      }
+      if(!this.aggregator) {
+        this.slackReporter.postMessage('Nothing to monitor');
+        return;
+      }
+      this.monitorAndNotify();
+      this.slackReporter.postMessage('Monitoring resumed');
+      this.report();
+      return;
+    }
+
+    this.slackReporter.postMessage("I'm not sure how to help with that.");
   }
 
   onStart() : void {
@@ -88,7 +123,7 @@ export default class AqiDuckController {
       this.report();
     } else {
       this.report();
-      setInterval(() => this.monitorAndNotify(), 5000)
+      this.monitorAndNotify();
     }
 
   }
