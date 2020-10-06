@@ -9,10 +9,18 @@ export default function attachListeners() : void {
     console.log('not starting a server in test');
     return
   }
-  // Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
+
   slackEvents.on('app_mention', (event : any) => {
-    console.log(`Received a message event: user ${event.user} in channel ${event.channel} says ${event.text}`);
-    ControllerRegistry[event.channel].handleEvent(event);
+    console.log(`Received an app_mention event: user ${event.user} in channel ${event.channel} says ${event.text}`);
+    ControllerRegistry[event.channel].handleAppMention(event);
+  });
+
+  // Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.channels
+  slackEvents.on('message', (event : any) => {
+    if(event.subtype === 'channel_topic') {
+      console.log(`Received a channel topic change event: user ${event.user} in channel ${event.channel} says ${event.text}`);
+      ControllerRegistry[event.channel].handleChannelTopicChange();
+    }
   });
 
   // Handle errors (see `errorCodes` export)

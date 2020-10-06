@@ -43,6 +43,9 @@ function flushPromises() {
 beforeEach(() => {
   mockSlackReporterA.postMessage.mockClear()
   mockSlackReporterB.postMessage.mockClear()
+  mockSlackReporterA.getConfig.mockImplementation(() => {
+    return Promise.resolve("Mock config A");
+  })
 });
 
 describe(".subscribeAll", () => {
@@ -55,14 +58,75 @@ describe(".subscribeAll", () => {
   });
 });
 
-describe("handleEvent", () => {
+describe("handleChannelTopicChange", () => {
+  it("Reloads the configuration", async () => {
+    const controller = new AqiDuckController(mockSlackReporterA);
+    // initial setup
+    await controller.setupAggregator();
+    controller.report();
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
+    mockSlackReporterA.postMessage.mockClear()
+
+    // config change, not reloaded yet
+    mockSlackReporterA.getConfig.mockImplementation(() => {
+      return Promise.resolve("Reloaded mock config A");
+    })
+    controller.report();
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
+    mockSlackReporterA.postMessage.mockClear()
+
+    // Reloading happens
+    controller.handleChannelTopicChange();
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Reloading configuration")
+
+    // After reloading
+    mockSlackReporterA.postMessage.mockClear()
+    controller.report();
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Reloaded mock config A")
+  });
+
+  it("Resets the timer", async () => {
+    const controller = new AqiDuckController(mockSlackReporterA);
+    // initial setup
+    await controller.setupAggregator();
+    await flushPromises();
+
+    // start the timer
+    controller.monitorAndNotify();
+
+    jest.runOnlyPendingTimers();
+    expect(monitorAggregator).toHaveBeenCalled();
+    monitorAggregator.mockClear();
+
+    expect(controller.interval).not.toBeFalsy();
+
+    // change config
+    mockSlackReporterA.getConfig.mockImplementation(() => {
+      return Promise.resolve("Reloaded mock config A");
+    })
+
+    // Reload
+    controller.handleChannelTopicChange();
+    await flushPromises();
+
+    jest.runOnlyPendingTimers();
+    expect(monitorAggregator).not.toHaveBeenCalled();
+    expect(controller.interval).toBeFalsy();
+  });
+});
+
+describe("handleAppMention", () => {
   it("sends a report if the event text says report", async () => {
     const controller = new AqiDuckController(mockSlackReporterA);
-    controller.handleEvent({ text: '<@USERNAMETHING>REPORT' });
+    controller.handleAppMention({ text: '<@USERNAMETHING>REPORT' });
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I'm not set up to give you a report!")
     mockSlackReporterA.postMessage.mockClear()
     await controller.setupAggregator();
-    controller.handleEvent({ text: '<@USERNAMETHING> report' });
+    controller.handleAppMention({ text: '<@USERNAMETHING> report' });
     await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
   });
@@ -72,17 +136,17 @@ describe("handleEvent", () => {
     await controller.setupAggregator();
 
     mockSlackReporterA.postMessage.mockClear()
-    controller.handleEvent({ text: '<@USERNAMETHING> Hello' });
+    controller.handleAppMention({ text: '<@USERNAMETHING> Hello' });
     await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith(expect.stringMatching("Hello there!"));
 
     mockSlackReporterA.postMessage.mockClear()
-    controller.handleEvent({ text: '<@USERNAMETHING> hi there' });
+    controller.handleAppMention({ text: '<@USERNAMETHING> hi there' });
     await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith(expect.stringMatching("Hello there!"));
 
     mockSlackReporterA.postMessage.mockClear()
-    controller.handleEvent({ text: '<@USERNAMETHING> high' });
+    controller.handleAppMention({ text: '<@USERNAMETHING> high' });
     await flushPromises();
     expect(mockSlackReporterA.postMessage).not.toHaveBeenCalledWith(expect.stringMatching("Hello there!"));
   });
@@ -95,13 +159,13 @@ describe("handleEvent", () => {
     expect(monitorAggregator).toHaveBeenCalled();
     monitorAggregator.mockClear();
     mockSlackReporterA.postMessage.mockClear()
-    controller.handleEvent({ text: '<@USERNAMETHING> Stop monitoring' });
+    controller.handleAppMention({ text: '<@USERNAMETHING> Stop monitoring' });
     jest.runOnlyPendingTimers();
     expect(monitorAggregator).not.toHaveBeenCalled();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledTimes(1);
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Monitoring stopped.");
     mockSlackReporterA.postMessage.mockClear()
-    controller.handleEvent({ text: '<@USERNAMETHING> Resume monitoring' });
+    controller.handleAppMention({ text: '<@USERNAMETHING> Resume monitoring' });
     jest.runOnlyPendingTimers();
     expect(monitorAggregator).toHaveBeenCalled();
     await flushPromises();
@@ -112,7 +176,7 @@ describe("handleEvent", () => {
   it("Doesn't stop monitoring if there's nothing to stop", async () => {
     const controller = new AqiDuckController(mockSlackReporterA);
     await controller.setupAggregator();
-    controller.handleEvent({ text: '<@USERNAMETHING> Stop monitoring' });
+    controller.handleAppMention({ text: '<@USERNAMETHING> Stop monitoring' });
     await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Nothing to stop.")
   })
@@ -121,28 +185,52 @@ describe("handleEvent", () => {
     const controller = new AqiDuckController(mockSlackReporterA);
     await controller.setupAggregator();
     controller.monitorAndNotify();
-    controller.handleEvent({ text: '<@USERNAMETHING> Resume monitoring' });
+    controller.handleAppMention({ text: '<@USERNAMETHING> Resume monitoring' });
     await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Monitoring is already running")
   })
 
   it("Doesn't resume monitoring if there's no aggregator set up", async () => {
     const controller = new AqiDuckController(mockSlackReporterA);
-    controller.handleEvent({ text: '<@USERNAMETHING> Resume monitoring' });
+    controller.handleAppMention({ text: '<@USERNAMETHING> Resume monitoring' });
     await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Nothing to monitor")
   })
 
-  it.todo("Reports dynamically if you tell it to with the phrase 'Dynamic AQI monitoring'");
-  //controller.handleEvent({ text: '<@USERNAMETHING> Dynamic AQI monitoring' });
+  it("Reloads when the user says to reload", async () => {
+    const controller = new AqiDuckController(mockSlackReporterA);
+    // initial setup
+    await controller.setupAggregator();
+    controller.report();
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
+    mockSlackReporterA.postMessage.mockClear()
 
-  it.todo("Reports statically if you tell it to");
-  //controller.handleEvent({ text: '<@USERNAMETHING> Monitor AQI [40,50]' });
+    // config change, not reloaded yet
+    mockSlackReporterA.getConfig.mockImplementation(() => {
+      return Promise.resolve("Reloaded mock config A");
+    })
+    controller.report();
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
+    mockSlackReporterA.postMessage.mockClear()
+
+    // Reloading requested
+    controller.handleAppMention({ text: '<@USERNAMETHING> Reload' });
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Reloading configuration")
+
+    // After reloading
+    mockSlackReporterA.postMessage.mockClear()
+    controller.report();
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Reloaded mock config A")
+  });
 
   it("Lets you know if the event text is unknown", async () => {
     const controller = new AqiDuckController(mockSlackReporterA);
     await controller.setupAggregator();
-    controller.handleEvent({ text: '<@USERNAMETHING> What' });
+    controller.handleAppMention({ text: '<@USERNAMETHING> What' });
     await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith(expect.stringContaining("I'm not sure how to help with that."))
   });
