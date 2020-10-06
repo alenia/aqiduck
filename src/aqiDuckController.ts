@@ -67,6 +67,7 @@ export default class AqiDuckController {
   docs() : string {
     return `
 You can ask me to:
+  reload
   report
   stop monitoring
   resume monitoring`
@@ -74,6 +75,10 @@ You can ask me to:
 
   //TODO figure out slack event type
   async handleChannelTopicChange(event: any) : Promise<void> {
+    this.reload();
+  }
+
+  async reload() : Promise<void> {
     this.cleanup();
     await this.slackReporter.postMessage("Reloading configuration");
     this.start();
@@ -88,6 +93,11 @@ You can ask me to:
 
     if(event.text.match(/report/i)) {
       this.report()
+      return;
+    }
+
+    if(event.text.match(/(\bload\b|\breload\b)/i)) {
+      this.reload()
       return;
     }
 

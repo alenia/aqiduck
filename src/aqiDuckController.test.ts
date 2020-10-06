@@ -133,11 +133,7 @@ describe("handleAppMention", () => {
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Nothing to monitor")
   })
 
-  it.todo("Reports dynamically if you tell it to with the phrase 'Dynamic AQI monitoring'");
-  //controller.handleAppMention({ text: '<@USERNAMETHING> Dynamic AQI monitoring' });
-
-  it.todo("Reports statically if you tell it to");
-  //controller.handleAppMention({ text: '<@USERNAMETHING> Monitor AQI [40,50]' });
+  it.todo("Test reloading");
 
   it("Lets you know if the event text is unknown", async () => {
     const controller = new AqiDuckController(mockSlackReporterA);
