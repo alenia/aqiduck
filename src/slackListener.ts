@@ -2,7 +2,7 @@
 const { createEventAdapter } = require('@slack/events-api'); //eslint-disable-line
 const slackEvents = createEventAdapter(process.env.SLACK_SIGNING_SECRET);
 const port = process.env.PORT || 3000;
-import { ControllerRegistry } from './aqiDuckController';
+import AqiDuckController from './aqiDuckController';
 
 export default function attachListeners() : void {
   if(process.env.NODE_ENV === "test") {
@@ -10,28 +10,30 @@ export default function attachListeners() : void {
     return
   }
 
-  slackEvents.on('app_mention', (event : any) => {
+  slackEvents.on('app_mention', async (event : any) => {
     console.log(`Received an app_mention event: user ${event.user} in channel ${event.channel} says ${event.text}`);
-    ControllerRegistry[event.channel].handleAppMention(event);
+    const controller = await AqiDuckController.findOrCreate(event.channel);
+    controller.handleAppMention(event);
   });
 
   // Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.channels
-  slackEvents.on('message', (event : any) => {
+  slackEvents.on('message', async (event : any) => {
     if(event.subtype === 'channel_topic') {
       console.log(`Received a channel topic change event: user ${event.user} in channel ${event.channel} says ${event.text}`);
-      ControllerRegistry[event.channel].handleChannelTopicChange();
+      const controller = await AqiDuckController.findOrCreate(event.channel);
+      controller.handleChannelTopicChange();
     }
   });
 
   slackEvents.on('channel_left', (event : any) => {
     console.log(`Received a channel_left event ${event.channel}`);
-    ControllerRegistry[event.channel].cleanup();
-    //ControllerRegistry[event.channel] = undefined;
+    AqiDuckController.unregister(event.channel);
   });
 
-  slackEvents.on('member_joined_channel', (event : any) => {
+  slackEvents.on('member_joined_channel', async (event : any) => {
     console.log(`Received a member_joined_channel event ${event.channel}`);
     console.log(event);
+    await AqiDuckController.findOrCreate(event.channel);
   });
 
   // Handle errors (see `errorCodes` export)

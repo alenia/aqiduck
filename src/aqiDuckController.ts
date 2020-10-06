@@ -162,6 +162,20 @@ You can ask me to:
     return controller;
   }
 
+  static async findOrCreate(channelId : string) : Promise<AqiDuckController> {
+    if(ControllerRegistry[channelId]) {
+      return Promise.resolve(ControllerRegistry[channelId]);
+    }
+    const reporter = new SlackReporter({id: channelId, name: channelId});
+    return await AqiDuckController.startForReporter(reporter)
+  }
+
+  static unregister(channelId : string) : void {
+    if(!ControllerRegistry[channelId]) { return }
+    ControllerRegistry[channelId].cleanup();
+    delete ControllerRegistry[channelId];
+  }
+
   static async subscribeAll() : Promise<void> {
     const reporters = await SlackReporter.subscribeAll();
     reporters.forEach(AqiDuckController.startForReporter);
@@ -172,7 +186,7 @@ You can ask me to:
         await AqiDuckController.onExit();
         process.exit();
       } catch {
-        console.log("error in postMessage, exiting");
+        console.log("error in onExit, exiting");
         process.exit();
       }
     });

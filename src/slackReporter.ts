@@ -55,10 +55,11 @@ class SlackReporter {
 
   async getConfig() : Promise<string | undefined> {
     const { channel: channelInfo } = await web.conversations.info({channel: this.channel.id}) as channelInfoResult;
-    this.topic = channelInfo.topic;
-    const config = this.topic.value.split('***')[1];
+    this.channel.name = channelInfo.name;
+    const topic = channelInfo.topic;
+    const config = topic.value.split('***')[1];
     if(!config) {
-      console.log(`no config for channel ${this.channel.name}`, this.topic);
+      console.log(`no config for channel ${this.channel.name}`, topic);
       return;
     }
 
