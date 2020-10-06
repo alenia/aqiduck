@@ -74,17 +74,17 @@ describe("handleEvent", () => {
     mockSlackReporterA.postMessage.mockClear()
     controller.handleEvent({ text: '<@USERNAMETHING> Hello' });
     await flushPromises();
-    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Hello there!")
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith(expect.stringMatching("Hello there!"));
 
     mockSlackReporterA.postMessage.mockClear()
     controller.handleEvent({ text: '<@USERNAMETHING> hi there' });
     await flushPromises();
-    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("Hello there!")
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith(expect.stringMatching("Hello there!"));
 
     mockSlackReporterA.postMessage.mockClear()
     controller.handleEvent({ text: '<@USERNAMETHING> high' });
     await flushPromises();
-    expect(mockSlackReporterA.postMessage).not.toHaveBeenCalledWith("Hello there!")
+    expect(mockSlackReporterA.postMessage).not.toHaveBeenCalledWith(expect.stringMatching("Hello there!"));
   });
 
   it("Stops reporting if you say stop monitoring, and resumes and reports when you say resume", async () => {
@@ -144,6 +144,6 @@ describe("handleEvent", () => {
     await controller.setupAggregator();
     controller.handleEvent({ text: '<@USERNAMETHING> What' });
     await flushPromises();
-    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I'm not sure how to help with that.")
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith(expect.stringContaining("I'm not sure how to help with that."))
   });
 });
