@@ -23,6 +23,17 @@ export default function attachListeners() : void {
     }
   });
 
+  slackEvents.on('channel_left', (event : any) => {
+    console.log(`Received a channel_left event ${event.channel}`);
+    ControllerRegistry[event.channel].cleanup();
+    //ControllerRegistry[event.channel] = undefined;
+  });
+
+  slackEvents.on('member_joined_channel', (event : any) => {
+    console.log(`Received a member_joined_channel event ${event.channel}`);
+    console.log(event);
+  });
+
   // Handle errors (see `errorCodes` export)
   slackEvents.on('error', console.error);
 
