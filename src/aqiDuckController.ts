@@ -164,17 +164,23 @@ You can ask me to:
 
   static async subscribeAll() : Promise<void> {
     const reporters = await SlackReporter.subscribeAll();
-    const controllerPromises = reporters.map(AqiDuckController.startForReporter);
+    reporters.forEach(AqiDuckController.startForReporter);
 
     process.on('SIGINT', async function() {
       console.log("Caught interrupt signal");
       try {
-        await Promise.all(controllerPromises.map((cp) => cp.then((c) => c.onExit())));
+        await AqiDuckController.onExit();
         process.exit();
       } catch {
         console.log("error in postMessage, exiting");
         process.exit();
       }
     });
+  }
+
+  static async onExit() : Promise<Array<void>> {
+    return Promise.all(Object.values(ControllerRegistry).map((controller : AqiDuckController) => {
+      return controller.onExit()
+    }))
   }
 }
