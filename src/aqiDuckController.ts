@@ -73,8 +73,7 @@ You can ask me to:
   resume monitoring`
   }
 
-  //TODO figure out slack event type
-  async handleChannelTopicChange(event: any) : Promise<void> {
+  async handleChannelTopicChange() : Promise<void> {
     this.reload();
   }
 

@@ -19,7 +19,7 @@ export default function attachListeners() : void {
   slackEvents.on('message', (event : any) => {
     if(event.subtype === 'channel_topic') {
       console.log(`Received a channel topic change event: user ${event.user} in channel ${event.channel} says ${event.text}`);
-      ControllerRegistry[event.channel].handleChannelTopicChange(event);
+      ControllerRegistry[event.channel].handleChannelTopicChange();
     }
   });
 
