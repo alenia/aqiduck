@@ -10,8 +10,7 @@ export default class AqiDuckController {
   error: boolean;
   interval: ReturnType<typeof setInterval>;
 
-  //TODO: I can't figure out how to test this if they type is SlackReporter
-  constructor(slackReporter: any) {
+  constructor(slackReporter: SlackReporter) {
     this.slackReporter = slackReporter;
     this.channelId = slackReporter.id;
     this.error = false;

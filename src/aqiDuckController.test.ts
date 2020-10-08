@@ -1,3 +1,7 @@
+import SlackReporter from './slackReporter';
+
+jest.useFakeTimers();
+
 const monitorAggregator = jest.fn().mockImplementation(() => Promise.resolve('tick'))
 jest.mock('./aggregator', () => {
   return {
@@ -10,29 +14,20 @@ jest.mock('./aggregator', () => {
   };
 });
 
-jest.useFakeTimers();
+jest.mock('./slackReporter');
+const MockedSlackReporter = SlackReporter as jest.Mocked<typeof SlackReporter>;
+MockedSlackReporter.subscribeAll.mockImplementation(() => {
+  return Promise.resolve([mockSlackReporterA, mockSlackReporterB]);
+})
 
-const mockSlackReporterA = {
-  postMessage: jest.fn(),
-  getChannelName: () => "Reporter A",
-  getConfig: jest.fn().mockImplementation(() => {
-    return Promise.resolve("Mock config A");
-  })
-}
+const mockSlackReporterA = new MockedSlackReporter({name: 'Reporter A', id: 'ReporterA'}) as jest.Mocked<SlackReporter>
+mockSlackReporterA.getChannelName.mockImplementation(() => "Reporter A");
+mockSlackReporterA.getConfig.mockImplementation(() => Promise.resolve("Mock config A"));
 
-const mockSlackReporterB = {
-  postMessage: jest.fn(),
-  getChannelName: () => "Reporter B",
-  getConfig: jest.fn().mockImplementation(() => {
-    return Promise.resolve("Mock config B");
-  })
-}
+const mockSlackReporterB = new MockedSlackReporter({name: 'Reporter B', id: 'ReporterB'}) as jest.Mocked<SlackReporter>;
+mockSlackReporterB.getChannelName.mockImplementation(() => "Reporter B");
+mockSlackReporterB.getConfig.mockImplementation(() => Promise.resolve("Mock config B"));
 
-jest.mock('./slackReporter', () => {
-  return { subscribeAll: jest.fn().mockImplementation(() => {
-    return Promise.resolve([mockSlackReporterA, mockSlackReporterB]);
-  }) };
-});
 
 import AqiDuckController from './aqiDuckController';
 
