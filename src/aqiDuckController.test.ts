@@ -39,6 +39,7 @@ function flushPromises() {
 
 beforeEach(() => {
   Object.keys(ControllerRegistry).forEach((key) => { delete ControllerRegistry[key] });
+  monitorAggregator.mockClear();
   MockedSlackReporter.mockClear();
   MockedSlackReporter.subscribeAll.mockClear();
   mockSlackReporterA.postMessage.mockClear();
@@ -97,6 +98,33 @@ describe(".findOrCreate", () => {
     expect(reporter.getChannelName()).toEqual('ReporterC');
     expect(Object.keys(ControllerRegistry).length).toEqual(3);
     expect(ControllerRegistry['ReporterC'].getChannelName()).toEqual('ReporterC');
+  });
+});
+
+describe("unregister", () => {
+  it('should remove the channel from the registry', async () => {
+    await AqiDuckController.subscribeAll();
+    await flushPromises();
+    expect(Object.keys(ControllerRegistry).length).toEqual(2);
+    expect(ControllerRegistry['ReporterA']).toBeTruthy();
+    AqiDuckController.unregister('ReporterA');
+    expect(ControllerRegistry['ReporterA']).toBeFalsy();
+    expect(Object.keys(ControllerRegistry).length).toEqual(1);
+  });
+
+  it('should stop any timers', async () => {
+    await AqiDuckController.subscribeAll();
+    await flushPromises();
+    const controller = ControllerRegistry['ReporterA'];
+    controller.monitorAndNotify();
+    jest.runOnlyPendingTimers();
+    expect(monitorAggregator).toHaveBeenCalled();
+    monitorAggregator.mockClear();
+
+    AqiDuckController.unregister('ReporterA');
+
+    jest.runOnlyPendingTimers();
+    expect(monitorAggregator).not.toHaveBeenCalled();
   });
 });
 
