@@ -162,19 +162,39 @@ You can ask me to:
     return controller;
   }
 
+  static async findOrCreate(channelId : string) : Promise<AqiDuckController> {
+    if(ControllerRegistry[channelId]) {
+      return Promise.resolve(ControllerRegistry[channelId]);
+    }
+    const reporter = new SlackReporter({id: channelId, name: channelId});
+    return await AqiDuckController.startForReporter(reporter)
+  }
+
+  static unregister(channelId : string) : void {
+    if(!ControllerRegistry[channelId]) { return }
+    ControllerRegistry[channelId].cleanup();
+    delete ControllerRegistry[channelId];
+  }
+
   static async subscribeAll() : Promise<void> {
     const reporters = await SlackReporter.subscribeAll();
-    const controllerPromises = reporters.map(AqiDuckController.startForReporter);
+    reporters.forEach(AqiDuckController.startForReporter);
 
     process.on('SIGINT', async function() {
       console.log("Caught interrupt signal");
       try {
-        await Promise.all(controllerPromises.map((cp) => cp.then((c) => c.onExit())));
+        await AqiDuckController.onExit();
         process.exit();
       } catch {
-        console.log("error in postMessage, exiting");
+        console.log("error in onExit, exiting");
         process.exit();
       }
     });
+  }
+
+  static async onExit() : Promise<Array<void>> {
+    return Promise.all(Object.values(ControllerRegistry).map((controller : AqiDuckController) => {
+      return controller.onExit()
+    }))
   }
 }

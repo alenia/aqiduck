@@ -1,3 +1,4 @@
+import { mocked } from 'ts-jest/utils';
 import SlackReporter from './slackReporter';
 
 jest.useFakeTimers();
@@ -15,41 +16,115 @@ jest.mock('./aggregator', () => {
 });
 
 jest.mock('./slackReporter');
-const MockedSlackReporter = SlackReporter as jest.Mocked<typeof SlackReporter>;
+const MockedSlackReporter = mocked(SlackReporter);
 MockedSlackReporter.subscribeAll.mockImplementation(() => {
   return Promise.resolve([mockSlackReporterA, mockSlackReporterB]);
 })
 
-const mockSlackReporterA = new MockedSlackReporter({name: 'Reporter A', id: 'ReporterA'}) as jest.Mocked<SlackReporter>
+const mockSlackReporterA = new SlackReporter({name: 'Reporter A', id: 'ReporterA'}) as jest.Mocked<SlackReporter>;
+mockSlackReporterA.id = "ReporterA";
 mockSlackReporterA.getChannelName.mockImplementation(() => "Reporter A");
 mockSlackReporterA.getConfig.mockImplementation(() => Promise.resolve("Mock config A"));
 
-const mockSlackReporterB = new MockedSlackReporter({name: 'Reporter B', id: 'ReporterB'}) as jest.Mocked<SlackReporter>;
+const mockSlackReporterB = new SlackReporter({name: 'Reporter B', id: 'ReporterB'}) as jest.Mocked<SlackReporter>;
+mockSlackReporterB.id = "ReporterB";
 mockSlackReporterB.getChannelName.mockImplementation(() => "Reporter B");
 mockSlackReporterB.getConfig.mockImplementation(() => Promise.resolve("Mock config B"));
 
-
-import AqiDuckController from './aqiDuckController';
+import AqiDuckController, { ControllerRegistry } from './aqiDuckController';
 
 function flushPromises() {
     return new Promise(resolve => setImmediate(resolve));
 }
 
 beforeEach(() => {
-  mockSlackReporterA.postMessage.mockClear()
-  mockSlackReporterB.postMessage.mockClear()
+  Object.keys(ControllerRegistry).forEach((key) => { delete ControllerRegistry[key] });
+  monitorAggregator.mockClear();
+  MockedSlackReporter.mockClear();
+  MockedSlackReporter.subscribeAll.mockClear();
+  mockSlackReporterA.postMessage.mockClear();
+  mockSlackReporterB.postMessage.mockClear();
   mockSlackReporterA.getConfig.mockImplementation(() => {
     return Promise.resolve("Mock config A");
   })
 });
 
 describe(".subscribeAll", () => {
+  it('should add two controllers to the registry', async () => {
+    expect(Object.keys(ControllerRegistry).length).toEqual(0);
+    await AqiDuckController.subscribeAll();
+    await flushPromises();
+    expect(Object.keys(ControllerRegistry).length).toEqual(2);
+    expect(ControllerRegistry['ReporterA'].slackReporter).toEqual(mockSlackReporterA);
+    expect(ControllerRegistry['ReporterB'].slackReporter).toEqual(mockSlackReporterB);
+  });
+
   it('should report for each controller', async () => {
     expect.assertions(2);
     await AqiDuckController.subscribeAll();
     await flushPromises();
-    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
-    expect(mockSlackReporterB.postMessage).toHaveBeenCalledWith("I am a report for Mock config B")
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A");
+    expect(mockSlackReporterB.postMessage).toHaveBeenCalledWith("I am a report for Mock config B");
+  });
+});
+
+describe(".findOrCreate", () => {
+  beforeEach(() => {
+    MockedSlackReporter.mockImplementation(({ name, id }) => {
+      return {
+        id: id,
+        channel: { name, id },
+        topic: { value: '' },
+        getChannelName: jest.fn().mockReturnValue(name),
+        getConfig: jest.fn().mockReturnValue(`Mock config for ${name}`),
+        postMessage: jest.fn()
+      }
+    })
+  })
+  it('should get controller from the registry if it is already created', async () => {
+    await AqiDuckController.subscribeAll();
+    await flushPromises();
+    expect(Object.keys(ControllerRegistry).length).toEqual(2);
+    const reporter = await AqiDuckController.findOrCreate('ReporterA');
+    expect(reporter.getChannelName()).toEqual('Reporter A');
+    expect(Object.keys(ControllerRegistry).length).toEqual(2);
+  });
+
+  it('should create a new controller if it is not created', async () => {
+    await AqiDuckController.subscribeAll();
+    await flushPromises();
+    expect(Object.keys(ControllerRegistry).length).toEqual(2);
+    const reporter = await AqiDuckController.findOrCreate('ReporterC');
+    expect(reporter.getChannelName()).toEqual('ReporterC');
+    expect(Object.keys(ControllerRegistry).length).toEqual(3);
+    expect(ControllerRegistry['ReporterC'].getChannelName()).toEqual('ReporterC');
+  });
+});
+
+describe("unregister", () => {
+  it('should remove the channel from the registry', async () => {
+    await AqiDuckController.subscribeAll();
+    await flushPromises();
+    expect(Object.keys(ControllerRegistry).length).toEqual(2);
+    expect(ControllerRegistry['ReporterA']).toBeTruthy();
+    AqiDuckController.unregister('ReporterA');
+    expect(ControllerRegistry['ReporterA']).toBeFalsy();
+    expect(Object.keys(ControllerRegistry).length).toEqual(1);
+  });
+
+  it('should stop any timers', async () => {
+    await AqiDuckController.subscribeAll();
+    await flushPromises();
+    const controller = ControllerRegistry['ReporterA'];
+    controller.monitorAndNotify();
+    jest.runOnlyPendingTimers();
+    expect(monitorAggregator).toHaveBeenCalled();
+    monitorAggregator.mockClear();
+
+    AqiDuckController.unregister('ReporterA');
+
+    jest.runOnlyPendingTimers();
+    expect(monitorAggregator).not.toHaveBeenCalled();
   });
 });
 
