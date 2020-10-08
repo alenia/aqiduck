@@ -1,31 +1,37 @@
-# AQIDuck (WIP)
+# AQIDuck
 ![Logo](assets/aqiduck.jpg)
 
-### This will:
+### Purpose:
 
 * Pull data from PurpleAir
 * Report to Slack about air quality and temperature based on the channel topic
-* Monitor AQI to let you know when it's safe to go outside or no longer safe to go outside
+* Monitor AQI to let you know when it's safe to go outside or no longer safe to go outside based on thresholds you set
+* Or Monitor AQI dynamically to let you know when AQI is trending up or down
 
 ### Future additions:
 
-* Pull data from Awair and Google Home (once Google Home becomes available for individual use)
-* Monitor temp on an outdoor and an indoor sensor to let you know when it's cool enough to open the windows to cool down the house
+* v2 will allow users to install the app on their slack instance from the app directory
+
+### Requirements:
+
+This version requires some minor devops knowledge and understanding of how to get a slackbot up and running
+
+* You must run the code off of some kind of server that has node on it
+* You must be able to create a slackbot and set up slackbot event subscriptions
 
 ### To install:
 
 * Pull the code down onto your server
 * Bundle running `yarn install` and run `yarn build-ts` to build the typescript files
 * Get a PurpleAir API Key
-* create a slackbot with the permissions `app_mentions:read`, `channels:read`, `chat:write`, `groups:read`
+* create a slackbot with the permissions `app_mentions:read`, `channels:read`, `chat:write`, `channels:history`, `groups:read`
 * Set up slack event subscriptions:
   - expose a port and calling: `./node_modules/.bin/slack-verify --secret [Signing secret] --port [you pick the port, default 3000]`
   - Put the URL of your app in the Event subscriptions part of the slack setup
   - You can find the signing secret in the basic information part of your slack setup
-  - Subscribe to the events `app_mention`, `channel_left`, `member_joined_channel`
+  - Subscribe to the events `app_mention`, `channel_left`, `member_joined_channel`, `message.channels`
   - cancel the `slack-verify` server so you can use that same port for the bot
 * Make sure you have all the environment variables set up listed in the example.env
-* Currently you have to setup the JSON and invite the slack user for your bot to all the channels before you start the server
 * Start the server using `node .` or running the `dist/index.js` file
 
 
@@ -45,12 +51,15 @@ Note this currently doesn't validate that the first number is less than the seco
 If you want your sensor to monitor whenever the AQI goes up or down by 5, add thresholds to the topic JSON like so:
 `{"sensors": [{"name": "Whatever", "type": "PurpleAir", "id": 12345, "AQIMonitoring":"dynamic"}]}`
 
+The bot will reload its configuration whenever the channel topic changes.
+
 ### To talk to the bot:
 
 * `@AQIDuck report` gives you the report
 * `@AQIDuck stop monitoring` stops the monitoring
 * `@AQIDuck resume monitoring` resumes the monitoring
 * `@AQIDuck hello` says hi
+* `@AQIDuck reload` reolads the config from the channel topic (this should happen automatically anyway)
 
 ### To find your PurpleAir sensor ID:
 
