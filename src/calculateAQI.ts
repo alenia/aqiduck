@@ -9,14 +9,15 @@ export interface aqiData {
   colorHex?: string;
 }
 
-export default function(basePM2_5: number) : aqiData {
+export default function(basePM2_5_raw: number) : aqiData {
+  const basePM2_5 = Math.floor(basePM2_5_raw * 10) / 10;
   const breakpointIndex = aqiBreakpoints.findIndex((b : breakpoint) : boolean => (
     b.pm2_5[0] <= basePM2_5 &&
-    basePM2_5 < b.pm2_5[1] + .1
+    basePM2_5 <= b.pm2_5[1]
   ));
 
   const breakpoint = aqiBreakpoints[breakpointIndex];
-  const unknownColor : [number, number, number] = [66,0,33]
+  const unknownColor : [number, number, number] = [66,0,33];
 
   if(!breakpoint) {
     return {
