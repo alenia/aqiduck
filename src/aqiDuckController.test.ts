@@ -9,6 +9,7 @@ jest.mock('./aggregator', () => {
     fromConfig: jest.fn().mockImplementation((config) => {
       return {
         report: jest.fn().mockImplementation(() => { return Promise.resolve(`I am a report for ${config}`) }),
+        showMonitoringConfig: jest.fn().mockImplementation(() => "What are we watching?"),
         monitorAndNotify: monitorAggregator
       }
     }),
@@ -133,7 +134,7 @@ describe("handleChannelTopicChange", () => {
     const controller = new AqiDuckController(mockSlackReporterA);
     // initial setup
     await controller.setupAggregator();
-    controller.report();
+    controller.postReport();
     await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
     mockSlackReporterA.postMessage.mockClear()
@@ -142,7 +143,7 @@ describe("handleChannelTopicChange", () => {
     mockSlackReporterA.getConfig.mockImplementation(() => {
       return Promise.resolve("Reloaded mock config A");
     })
-    controller.report();
+    controller.postReport();
     await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
     mockSlackReporterA.postMessage.mockClear()
@@ -154,7 +155,7 @@ describe("handleChannelTopicChange", () => {
 
     // After reloading
     mockSlackReporterA.postMessage.mockClear()
-    controller.report();
+    controller.postReport();
     await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Reloaded mock config A")
   });
@@ -271,7 +272,7 @@ describe("handleAppMention", () => {
     const controller = new AqiDuckController(mockSlackReporterA);
     // initial setup
     await controller.setupAggregator();
-    controller.report();
+    controller.postReport();
     await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
     mockSlackReporterA.postMessage.mockClear()
@@ -280,7 +281,7 @@ describe("handleAppMention", () => {
     mockSlackReporterA.getConfig.mockImplementation(() => {
       return Promise.resolve("Reloaded mock config A");
     })
-    controller.report();
+    controller.postReport();
     await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Mock config A")
     mockSlackReporterA.postMessage.mockClear()
@@ -292,9 +293,18 @@ describe("handleAppMention", () => {
 
     // After reloading
     mockSlackReporterA.postMessage.mockClear()
-    controller.report();
+    controller.postReport();
     await flushPromises();
     expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith("I am a report for Reloaded mock config A")
+  });
+
+  it("Gives the status of the current monitoring", async () => {
+    const controller = new AqiDuckController(mockSlackReporterA);
+    await controller.setupAggregator();
+    controller.handleAppMention({ text: '<@USERNAMETHING> Status' });
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith(expect.stringContaining("Monitoring is stopped"))
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith(expect.stringContaining("What are we watching"))
   });
 
   it("Lets you know if the event text is unknown", async () => {

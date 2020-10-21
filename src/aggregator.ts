@@ -74,6 +74,17 @@ export class DecoratedSensor {
     return ""
   }
 
+  showMonitoringConfig() : string {
+    if(!this.AQIMonitoring) {
+      return `${this.name}: not monitoring`
+    }
+    let out = `${this.name}: ${this.AQIMonitoring} monitoring`;
+    if(this.AQIThresholds) {
+      out += ` [${this.AQIThresholds}]`;
+    }
+    return out;
+  }
+
   async getReport() : Promise<string | Error> {
     const data = await this.getData();
     // Reset thresholds and brackets since we're reporting data anyway
@@ -130,6 +141,10 @@ class Aggregator {
     } catch (e) {
       console.log('reporting error', e);
     }
+  }
+
+  showMonitoringConfig(): string {
+    return this.sensors.map((s) => s.showMonitoringConfig()).join('\n');
   }
 
   async report(): Promise<undefined | string> {

@@ -51,7 +51,15 @@ export default class AqiDuckController {
     this.interval = setInterval(monitoringFn, 5000);
   }
 
-  report() : void {
+  postMonitoringStatus() : void {
+    let message = this.aggregator.showMonitoringConfig();
+    if(!this.interval) {
+      message += "\nMonitoring is stopped"
+    }
+    this.slackReporter.postMessage(message);
+  }
+
+  postReport() : void {
     if(!this.aggregator) {
       this.slackReporter.postMessage("I'm not set up to give you a report!");
       return
@@ -66,8 +74,9 @@ export default class AqiDuckController {
   docs() : string {
     return `
 You can ask me to:
-  reload
-  report
+  reload          _re-read configuration from the channel topic_
+  report          _report the current AQI at all configured locations_
+  status          _what is being monitored_
   stop monitoring
   resume monitoring`
   }
@@ -90,7 +99,12 @@ You can ask me to:
     }
 
     if(event.text.match(/report/i)) {
-      this.report()
+      this.postReport()
+      return;
+    }
+
+    if(event.text.match(/status/i)) {
+      this.postMonitoringStatus()
       return;
     }
 
@@ -120,7 +134,12 @@ You can ask me to:
       }
       this.monitorAndNotify();
       this.slackReporter.postMessage('Monitoring resumed');
-      this.report();
+      this.postReport();
+      return;
+    }
+
+    if(event.text.match(/help/i)) {
+      this.slackReporter.postMessage(this.docs());
       return;
     }
 
@@ -146,9 +165,9 @@ You can ask me to:
     await this.setupAggregator();
     if(this.error) { return }
     if(process.env.NODE_ENV==="test") {
-      this.report();
+      this.postReport();
     } else {
-      this.report();
+      this.postReport();
       this.monitorAndNotify();
     }
 

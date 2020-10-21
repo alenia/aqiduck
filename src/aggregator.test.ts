@@ -15,7 +15,6 @@ const indoorSensor = {
   }),
 }
 
-//TODO: once I have aggregator.js converted to typescript set this type
 let aggregator: Aggregator;
 
 beforeEach(() => {
@@ -115,7 +114,7 @@ describe("DecoratedSensor", () => {
       expect(outdoorSensor.getData).not.toHaveBeenCalled();
     });
     describe('Dynamic monitoring', () => {
-      it.only('resets the thresholds whenever a threshold is crossed', async () => {
+      it('resets the thresholds whenever a threshold is crossed', async () => {
         const sensor = new DecoratedSensor({
           name: "Sensor",
           sensor: outdoorSensor,
@@ -184,6 +183,13 @@ describe("DecoratedSensor", () => {
   });
 })
 
+describe('.showMonitoringConfig', () => {
+  it("lists the monitoring type and current thresholds for the component sensors", () => {
+    const config = '{"sensors": [{"name": "Oversharer", "type": "MockSensor", "id": 12345, "AQIMonitoring": "dynamic"}, {"name": "Bounded", "type": "MockSensor", "id": 13245, "AQIThresholds": [10,20]}, {"name": "Dark horse", "type": "MockSensor", "id": 54321}]}';
+    aggregator = Aggregator.fromConfig(config);
+    expect(aggregator.showMonitoringConfig()).toEqual("Oversharer: dynamic monitoring\nBounded: static monitoring [10,20]\nDark horse: not monitoring");
+  });
+});
 describe('.report', () => {
   test("It lists the indoor AQI and temperature", async () => {
     expect.assertions(3);
