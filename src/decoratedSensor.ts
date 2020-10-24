@@ -1,20 +1,5 @@
 import { sensorData, Sensor, monitoringTypes, labeledSensor } from './interfaces/sensor';
 
-const reportData = function({AQI, AQICategory, AQIColorHex, temperature} : sensorData, prefix : string) {
-  let output = "";
-  if(AQI === 0 || AQI) {
-    output += `${prefix} AQI: ${AQI}`;
-    if(AQICategory && AQIColorHex) {
-      output += ` (${AQICategory} ${AQIColorHex})`
-    }
-    output += '\n'
-  }
-  if(temperature) {
-    output += `${prefix} Temperature: ${temperature}\n`;
-  }
-  return output;
-}
-
 enum notifyBracket {
   low = "low",
   high = "high",
@@ -42,15 +27,30 @@ export default class DecoratedSensor {
       return "";
     }
     const data = await this.getData();
-    console.log(this.name, reportData(data, this.currentAQINotifyBracket));
+    console.log(this.currentAQINotifyBracket, this.formatReport(data));
     const newBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
     if(newBracket && newBracket !== this.currentAQINotifyBracket) {
       this.resetAQIThresholds(data.AQI);
       this.currentAQINotifyBracket = this.calculateAQINotifyBracket(data.AQI);
       const prefix = newBracket === notifyBracket.high ? ":arrow_up: QUACK!!!" : ":arrow_down: quack!"
-      return `${prefix} ${this.name} AQI is getting ${newBracket}er!!\n\n${reportData(data, this.name)}`
+      return `${prefix} ${this.name} AQI is getting ${newBracket}er!!\n\n${this.formatReport(data)}`
     }
     return ""
+  }
+
+  formatReport({AQI, AQICategory, AQIColorHex, temperature} : sensorData) {
+    let output = "";
+    if(AQI === 0 || AQI) {
+      output += `${this.name} AQI: ${AQI}`;
+      if(AQICategory && AQIColorHex) {
+        output += ` (${AQICategory} ${AQIColorHex})`
+      }
+      output += '\n'
+    }
+    if(temperature) {
+      output += `${this.name} Temperature: ${temperature}\n`;
+    }
+    return output;
   }
 
   showMonitoringConfig() : string {
@@ -69,7 +69,7 @@ export default class DecoratedSensor {
     // Reset thresholds and brackets since we're reporting data anyway
     this.resetAQIThresholds(data.AQI);
     this.currentAQINotifyBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
-    return reportData(data, this.name);
+    return this.formatReport(data);
   }
 
   private async getData() { //Only call this with getReport or monitorThresholds
