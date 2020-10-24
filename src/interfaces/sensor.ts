@@ -11,3 +11,15 @@ export interface Sensor {
   getData: () => Promise<sensorData>;
 }
 
+export enum monitoringTypes {
+  dynamic = "dynamic",
+  static = "static"
+}
+
+export interface labeledSensor {
+  name: string;
+  sensor: Sensor;
+  AQIThresholds?: [number, number];
+  AQIMonitoring?: monitoringTypes;
+}
+
