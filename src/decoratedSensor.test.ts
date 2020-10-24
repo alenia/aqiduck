@@ -216,7 +216,79 @@ describe('.monitorThresholds', () => {
       expect(output).toMatch('AQI: 601');
     });
     it.todo('alerts going down whenever a category boundary is crossed');
-    it.todo('does not alert when the AQI is hovering around the category boundary');
+    it('does not alert when the AQI is hovering around the category boundary', async () => {
+      const sensor = new DecoratedSensor({
+        name: "Sensor",
+        sensor: outdoorSensor,
+        AQIMonitoring: monitoringTypes.category
+      });
+
+      outdoorSensorData = { AQI: 95 };
+      let output = await sensor.getReport();
+
+      outdoorSensorData = { AQI: 101 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("higher");
+      expect(output).toMatch('AQI: 101');
+      // say down if it drops below 95, up if it rises above 150
+
+      outdoorSensorData = { AQI: 99 };
+      output = await sensor.monitorThresholds();
+      expect(output).toBeFalsy();
+
+      outdoorSensorData = { AQI: 100 };
+      output = await sensor.monitorThresholds();
+      expect(output).toBeFalsy();
+
+      outdoorSensorData = { AQI: 101 };
+      output = await sensor.monitorThresholds();
+      expect(output).toBeFalsy();
+
+      outdoorSensorData = { AQI: 105 };
+      output = await sensor.monitorThresholds();
+      expect(output).toBeFalsy();
+      // say down if it drops below 100, up if it rises above 150
+
+      outdoorSensorData = { AQI: 101 };
+      output = await sensor.monitorThresholds();
+      expect(output).toBeFalsy();
+
+      outdoorSensorData = { AQI: 99 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("lower");
+      expect(output).toMatch('AQI: 99');
+      // say down if it drops below 50, up if it rises above 105
+
+      outdoorSensorData = { AQI: 100 };
+      output = await sensor.monitorThresholds();
+      expect(output).toBeFalsy();
+
+      outdoorSensorData = { AQI: 101 };
+      output = await sensor.monitorThresholds();
+      expect(output).toBeFalsy();
+
+      outdoorSensorData = { AQI: 105 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("higher");
+      expect(output).toMatch('AQI: 105');
+      // say down if it drops below 100, up if it rises above 150
+
+      outdoorSensorData = { AQI: 99 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("lower");
+      expect(output).toMatch('AQI: 99');
+      // say down if it drops below 50, up if it rises above 105
+
+      outdoorSensorData = { AQI: 95 };
+      output = await sensor.monitorThresholds();
+      expect(output).toBeFalsy();
+      // say down if it drops below 50, up if it rises above 100
+
+      outdoorSensorData = { AQI: 101 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("higher");
+      expect(output).toMatch('AQI: 101');
+    });
   });
 });
 
