@@ -38,21 +38,6 @@ export default class DecoratedSensor {
     return ""
   }
 
-  formatReport({AQI, AQICategory, AQIColorHex, temperature} : sensorData) {
-    let output = "";
-    if(AQI === 0 || AQI) {
-      output += `${this.name} AQI: ${AQI}`;
-      if(AQICategory && AQIColorHex) {
-        output += ` (${AQICategory} ${AQIColorHex})`
-      }
-      output += '\n'
-    }
-    if(temperature) {
-      output += `${this.name} Temperature: ${temperature}\n`;
-    }
-    return output;
-  }
-
   showMonitoringConfig() : string {
     if(!this.AQIMonitoring) {
       return `${this.name}: not monitoring`
@@ -70,6 +55,21 @@ export default class DecoratedSensor {
     this.resetAQIThresholds(data.AQI);
     this.currentAQINotifyBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
     return this.formatReport(data);
+  }
+
+  private formatReport({AQI, AQICategory, AQIColorHex, temperature} : sensorData) {
+    let output = "";
+    if(AQI === 0 || AQI) {
+      output += `${this.name} AQI: ${AQI}`;
+      if(AQICategory && AQIColorHex) {
+        output += ` (${AQICategory} ${AQIColorHex})`
+      }
+      output += '\n'
+    }
+    if(temperature) {
+      output += `${this.name} Temperature: ${temperature}\n`;
+    }
+    return output;
   }
 
   private async getData() { //Only call this with getReport or monitorThresholds
