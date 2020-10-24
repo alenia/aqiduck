@@ -7,7 +7,11 @@ enum notifyBracket {
   none = "",
 }
 
-//I really want to refactor this to be a cleaner state machine
+interface monitoringState {
+  thresholds : [number, number];
+  notifyBracket: notifyBracket;
+}
+
 
 export default class DecoratedSensor {
   name: string;
@@ -30,16 +34,18 @@ export default class DecoratedSensor {
       return "";
     }
     const data = await this.getData();
+
     if(data.AQI === undefined) { return "" }
 
     console.log(this.currentAQINotifyBracket, this.formatReport(data));
-    const newBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
-    this.calculateAQIThresholds(data.AQI);
-    if(newBracket && newBracket !== this.currentAQINotifyBracket) {
-      this.currentAQINotifyBracket = this.calculateAQINotifyBracket(data.AQI);
+
+    const stateChanges = this.updateAQIMonitoringState(data.AQI);
+    if(stateChanges.changed && stateChanges.bracketChange) {
+      const newBracket = stateChanges.bracketChange
       const prefix = newBracket === notifyBracket.high ? ":arrow_up: QUACK!!!" : ":arrow_down: quack!"
       return `${prefix} ${this.name} AQI is getting ${newBracket}er!!\n\n${this.formatReport(data)}`
     }
+
     return ""
   }
 
@@ -59,10 +65,35 @@ export default class DecoratedSensor {
 
     if(data.AQI === undefined) { return "" }
 
-    // Reset thresholds and brackets since we're reporting data anyway
-    this.calculateAQIThresholds(data.AQI, true);
-    this.currentAQINotifyBracket = this.calculateAQINotifyBracket(data.AQI);
+    this.updateAQIMonitoringState(data.AQI, true);
+
     return this.formatReport(data);
+  }
+
+  //TODO: figure out how to get rid of the bracketChange flag? it has to do with threshold crossing direction
+  private updateAQIMonitoringState(AQI: number, forceReset = false) : { old: monitoringState; new: monitoringState, bracketChange: notifyBracket, changed: boolean } {
+    const oldThresholds : [number,number] | undefined = this.AQIThresholds ? [...this.AQIThresholds] : undefined;
+    const old : monitoringState = { thresholds: oldThresholds, notifyBracket: this.currentAQINotifyBracket }
+
+    // Need to calculate and expose whether above or below the PREVIOUS bracket
+    // Figure out how to refactor this later so it's clearer
+    const oldThresholdNotifyBracket = this.calculateAQINotifyBracket(AQI) || this.currentAQINotifyBracket;
+
+    const thresholds = this.calculateAQIThresholds(AQI, forceReset) || oldThresholds;
+
+    const shouldChange = oldThresholdNotifyBracket !== this.currentAQINotifyBracket || thresholds !== oldThresholds;
+
+    this.AQIThresholds = thresholds;
+
+    // only change the bracket if other things changed
+    const notifyBracket = shouldChange || forceReset ? this.calculateAQINotifyBracket(AQI) : this.currentAQINotifyBracket;
+    this.currentAQINotifyBracket = notifyBracket;
+
+    const stateChanges = { old, new: { thresholds, notifyBracket }, bracketChange: oldThresholdNotifyBracket, changed: shouldChange}
+
+    if(stateChanges.changed) { console.log(this.name, 'monitoring state changing', AQI, stateChanges) }
+
+    return stateChanges;
   }
 
   private formatReport({AQI, AQICategory, AQIColorHex, temperature} : sensorData) {
@@ -89,19 +120,13 @@ export default class DecoratedSensor {
     }
   }
 
-  private calculateAQIThresholds(AQI : number, forceReset = false): void {
-    let newThresholds : [number, number];
+  private calculateAQIThresholds(AQI : number, forceReset = false): [number, number] {
     if(this.AQIMonitoring === monitoringTypes.dynamic) {
-      newThresholds = this.thresholdForDynamicMonitoring(AQI, forceReset);
+      return this.thresholdForDynamicMonitoring(AQI, forceReset);
     }
 
     if(this.AQIMonitoring === monitoringTypes.category) {
-      newThresholds = this.thresholdForCategoryMonitoring(AQI, forceReset);
-    }
-
-    if(newThresholds) {
-      console.log(this.name, "resetting thresholds", { AQI, old: this.AQIThresholds, new: newThresholds });
-      this.AQIThresholds = newThresholds;
+      return this.thresholdForCategoryMonitoring(AQI, forceReset);
     }
   }
 
