@@ -1,4 +1,5 @@
 import { sensorData, Sensor, monitoringTypes, labeledSensor } from './interfaces/sensor';
+import { aqiBreakpoints } from './aqiBreakpoints';
 
 enum notifyBracket {
   low = "low",
@@ -82,9 +83,28 @@ export default class DecoratedSensor {
   }
 
   private resetAQIThresholds(AQI : number): void {
-    if(this.AQIMonitoring !== monitoringTypes.dynamic) { return }
-    console.log("resetting thresholds", [AQI - 4, AQI + 4]);
-    this.AQIThresholds = [AQI - 4, AQI + 4];
+    let newThresholds : [number, number];
+    if(this.AQIMonitoring === monitoringTypes.dynamic) {
+      newThresholds = [AQI - 4, AQI + 4]
+    }
+
+    if(this.AQIMonitoring === monitoringTypes.category) {
+      const breakpoint = aqiBreakpoints.find((b) : boolean => (
+        b.AQI[0] <= AQI &&
+        AQI <= b.AQI[1]
+      ))
+      if(breakpoint) {
+        newThresholds = breakpoint.AQI;
+      } else {
+        const low = Math.floor(AQI/100)*100;
+        newThresholds = [low, low + 100]
+      }
+    }
+
+    if(newThresholds) {
+      console.log("resetting thresholds", newThresholds);
+      this.AQIThresholds = newThresholds
+    }
   }
 
   private calculateAQINotifyBracket(AQI : number): notifyBracket {

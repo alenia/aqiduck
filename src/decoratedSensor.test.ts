@@ -145,7 +145,81 @@ describe('.monitorThresholds', () => {
       expect(output).toMatch("higher");
     });
   });
+
+  describe('Category monitoring', () => {
+    it('alerts going up whenever a category boundary is crossed', async () => {
+      const sensor = new DecoratedSensor({
+        name: "Sensor",
+        sensor: outdoorSensor,
+        AQIMonitoring: monitoringTypes.category
+      });
+
+      outdoorSensorData = { AQI: 12 };
+      let output = await sensor.getReport();
+
+      // good -> moderate
+      outdoorSensorData = { AQI: 45 };
+      output = await sensor.monitorThresholds();
+      expect(output).toBeFalsy();
+      outdoorSensorData = { AQI: 51 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("higher");
+      expect(output).toMatch('AQI: 51');
+
+      // moderate -> usg
+      outdoorSensorData = { AQI: 99 };
+      output = await sensor.monitorThresholds();
+      expect(output).toBeFalsy();
+      outdoorSensorData = { AQI: 101 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("higher");
+      expect(output).toMatch('AQI: 101');
+
+      // usg -> unhealthy
+      outdoorSensorData = { AQI: 149 };
+      output = await sensor.monitorThresholds();
+      expect(output).toBeFalsy()
+      outdoorSensorData = { AQI: 151 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("higher");
+      expect(output).toMatch('AQI: 151');
+
+      // very unhealthy
+      outdoorSensorData = { AQI: 201 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("higher");
+      expect(output).toMatch('AQI: 201');
+
+      // somewhere in hazardous
+      outdoorSensorData = { AQI: 350 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("higher");
+      expect(output).toMatch('AQI: 350');
+
+      // extra hazardous
+      outdoorSensorData = { AQI: 480 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("higher");
+      expect(output).toMatch('AQI: 480');
+
+      // beyond it just notifies every 100
+      outdoorSensorData = { AQI: 502 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("higher");
+      expect(output).toMatch('AQI: 502');
+      outdoorSensorData = { AQI: 599 };
+      output = await sensor.monitorThresholds();
+      expect(output).toBeFalsy();
+      outdoorSensorData = { AQI: 601 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("higher");
+      expect(output).toMatch('AQI: 601');
+    });
+    it.todo('alerts going down whenever a category boundary is crossed');
+    it.todo('does not alert when the AQI is hovering around the category boundary');
+  });
 });
+
 describe('.getReport', () => {
   it('Resets the thresholds for monitoring, and reports even when it does not cross a threshold', async () => {
     const sensor = new DecoratedSensor({
