@@ -30,6 +30,8 @@ export default class DecoratedSensor {
       return "";
     }
     const data = await this.getData();
+    if(data.AQI === undefined) { return "" }
+
     console.log(this.currentAQINotifyBracket, this.formatReport(data));
     const newBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
     this.calculateAQIThresholds(data.AQI);
@@ -54,6 +56,9 @@ export default class DecoratedSensor {
 
   async getReport() : Promise<string | Error> {
     const data = await this.getData();
+
+    if(data.AQI === undefined) { return "" }
+
     // Reset thresholds and brackets since we're reporting data anyway
     this.calculateAQIThresholds(data.AQI, true);
     this.currentAQINotifyBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
