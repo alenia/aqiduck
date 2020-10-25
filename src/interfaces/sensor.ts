@@ -13,7 +13,8 @@ export interface Sensor {
 
 export enum monitoringTypes {
   dynamic = "dynamic",
-  static = "static"
+  static = "static",
+  category = "category"
 }
 
 export interface labeledSensor {
