@@ -37,8 +37,6 @@ export default class DecoratedSensor {
 
     if(data.AQI === undefined) { return "" }
 
-    console.log(this.currentAQINotifyBracket, this.formatReport(data));
-
     const stateChanges = this.updateAQIMonitoringState(data.AQI);
     if(stateChanges.changed && stateChanges.bracketChange) {
       const newBracket = stateChanges.bracketChange
@@ -70,26 +68,24 @@ export default class DecoratedSensor {
     return this.formatReport(data);
   }
 
-  //TODO: figure out how to get rid of the bracketChange flag? it has to do with threshold crossing direction
   private updateAQIMonitoringState(AQI: number, forceReset = false) : { old: monitoringState; new: monitoringState, bracketChange: notifyBracket, changed: boolean } {
     const oldThresholds : [number,number] | undefined = this.AQIThresholds ? [...this.AQIThresholds] : undefined;
     const old : monitoringState = { thresholds: oldThresholds, notifyBracket: this.currentAQINotifyBracket }
 
     // Need to calculate and expose whether above or below the PREVIOUS bracket
-    // Figure out how to refactor this later so it's clearer
-    const oldThresholdNotifyBracket = this.calculateAQINotifyBracket(AQI) || this.currentAQINotifyBracket;
+    const newBracketFromOldThresholds = this.calculateAQINotifyBracket(AQI) || old.notifyBracket;
 
-    const thresholds = this.calculateAQIThresholds(AQI, forceReset) || oldThresholds;
+    const thresholds = this.calculateAQIThresholds(AQI, forceReset) || old.thresholds;
 
-    const shouldChange = oldThresholdNotifyBracket !== this.currentAQINotifyBracket || thresholds !== oldThresholds;
+    const shouldChange = newBracketFromOldThresholds !== this.currentAQINotifyBracket || thresholds !== old.thresholds;
 
     this.AQIThresholds = thresholds;
 
     // only change the bracket if other things changed
-    const notifyBracket = shouldChange || forceReset ? this.calculateAQINotifyBracket(AQI) : this.currentAQINotifyBracket;
+    const notifyBracket = shouldChange || forceReset ? this.calculateAQINotifyBracket(AQI) : old.notifyBracket;
     this.currentAQINotifyBracket = notifyBracket;
 
-    const stateChanges = { old, new: { thresholds, notifyBracket }, bracketChange: oldThresholdNotifyBracket, changed: shouldChange}
+    const stateChanges = { old, new: { thresholds, notifyBracket }, bracketChange: newBracketFromOldThresholds, changed: shouldChange}
 
     if(stateChanges.changed) { console.log(this.name, 'monitoring state changing', AQI, stateChanges) }
 
