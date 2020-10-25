@@ -44,12 +44,17 @@ Whatever channel topic you want to write
 ***{"sensors": [{"name": "Sesame Street", "type": "PurpleAir", "id": 12345}]}***
 ```
 
-If you want your sensor to monitor specific AQI thresholds, add thresholds to the topic JSON like so:
+#### Monitoring:
+
+If you want your sensor to let you know if the AQI crosses specific boundaries, add `AQIThresholds` to the topic JSON like so:
 `{"sensors": [{"name": "Whatever", "type": "PurpleAir", "id": 12345, "AQIThresholds":[50,80]}]}`
 Note this currently doesn't validate that the first number is less than the second, and only looks at the first two items.
 
-If you want your sensor to monitor whenever the AQI goes up or down by 5, add thresholds to the topic JSON like so:
+If you want your sensor to let you know whenever the AQI goes up or down by 5, set `AQIMonitoring` to `dynamic`:
 `{"sensors": [{"name": "Whatever", "type": "PurpleAir", "id": 12345, "AQIMonitoring":"dynamic"}]}`
+
+If you want your sensor to let you know whenever the AQI crosses to a new category (e.g Good, Unhealthy), set `AQIMonitoring` to `category`:
+`{"sensors": [{"name": "Whatever", "type": "PurpleAir", "id": 12345, "AQIMonitoring":"category"}]}`
 
 The bot will reload its configuration whenever the channel topic changes.
 
