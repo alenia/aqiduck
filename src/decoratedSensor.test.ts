@@ -299,11 +299,11 @@ describe('.getReport', () => {
       sensor: outdoorSensor,
       AQIThresholds: [50,60]
     });
-    expect.assertions(4);
     outdoorSensorData = { AQI: 54 };
     let output : string | Error = await sensor.monitorThresholds();
     expect(output).toBeFalsy();
     outdoorSensorData = { AQI: 61 };
+
     output = await sensor.getReport();
     expect(output).toMatch('AQI: 61');
     outdoorSensorData = { AQI: 62 };
@@ -311,6 +311,13 @@ describe('.getReport', () => {
     expect(output).toBeFalsy();
     output = await sensor.getReport();
     expect(output).toMatch('AQI: 62');
+    outdoorSensorData = { AQI: 55 };
+    output = await sensor.getReport();
+    expect(output).toMatch('AQI: 55');
+    outdoorSensorData = { AQI: 62 };
+    output = await sensor.monitorThresholds();
+    expect(output).toMatch('AQI: 62');
+    expect(output).toMatch('higher');
   });
 });
 

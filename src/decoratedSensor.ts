@@ -61,7 +61,7 @@ export default class DecoratedSensor {
 
     // Reset thresholds and brackets since we're reporting data anyway
     this.calculateAQIThresholds(data.AQI, true);
-    this.currentAQINotifyBracket = this.calculateAQINotifyBracket(data.AQI) || this.currentAQINotifyBracket;
+    this.currentAQINotifyBracket = this.calculateAQINotifyBracket(data.AQI);
     return this.formatReport(data);
   }
 
