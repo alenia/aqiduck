@@ -106,7 +106,7 @@ export default class DecoratedSensor {
   }
 
   private thresholdForDynamicMonitoring(AQI : number, forceReset : boolean) : [number, number] | undefined {
-    if(!forceReset && this.AQIThresholds && this.AQIThresholds[0] < AQI && AQI < this.AQIThresholds[1]) {
+    if(!forceReset && this.AQIThresholds && this.AQIThresholds[0] <= AQI && AQI <= this.AQIThresholds[1]) {
       return;
     }
 

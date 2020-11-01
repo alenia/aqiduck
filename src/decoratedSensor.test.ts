@@ -100,6 +100,21 @@ describe('.monitorThresholds', () => {
     expect(outdoorSensor.getData).not.toHaveBeenCalled();
   });
   describe('Dynamic monitoring', () => {
+    it('monitors when crossing threshold by one', async () => {
+      const sensor = new DecoratedSensor({
+        name: "Sensor",
+        sensor: outdoorSensor,
+        AQIMonitoring: monitoringTypes.dynamic
+      });
+      outdoorSensorData = { AQI: 54 };
+      let output = await sensor.getReport();
+      outdoorSensorData = { AQI: 58 };
+      output = await sensor.monitorThresholds();
+      expect(output).toBeFalsy();
+      outdoorSensorData = { AQI: 59 };
+      output = await sensor.monitorThresholds();
+      expect(output).toMatch("higher");
+    });
     it('resets the thresholds whenever a threshold is crossed', async () => {
       const sensor = new DecoratedSensor({
         name: "Sensor",
