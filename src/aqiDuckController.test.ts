@@ -222,6 +222,16 @@ describe("handleAppMention", () => {
     expect(mockSlackReporterA.postMessage).not.toHaveBeenCalledWith(expect.stringMatching("Hello there!"));
   });
 
+  it("Lets you know the version if you ask", async () => {
+    const controller = new AqiDuckController(mockSlackReporterA);
+    await controller.setupAggregator();
+
+    mockSlackReporterA.postMessage.mockClear()
+    controller.handleAppMention({ text: '<@USERNAMETHING> Version' });
+    await flushPromises();
+    expect(mockSlackReporterA.postMessage).toHaveBeenCalledWith(expect.stringMatching(/\bv\d+\.\d+\.\d+\b/));
+  });
+
   it("Stops reporting if you say stop monitoring, and resumes and reports when you say resume", async () => {
     const controller = new AqiDuckController(mockSlackReporterA);
     await controller.setupAggregator();

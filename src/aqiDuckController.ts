@@ -1,5 +1,6 @@
 import SlackReporter from './slackReporter';
 import Aggregator from './aggregator';
+const { version } = require('../package.json'); //eslint-disable-line
 
 export const ControllerRegistry: Record<string, AqiDuckController> = {};
 
@@ -77,6 +78,7 @@ You can ask me to:
   reload          _re-read configuration from the channel topic_
   report          _report the current AQI at all configured locations_
   status          _what is being monitored_
+  version
   stop monitoring
   resume monitoring`
   }
@@ -105,6 +107,11 @@ You can ask me to:
 
     if(event.text.match(/status/i)) {
       this.postMonitoringStatus()
+      return;
+    }
+
+    if(event.text.match(/version/i)) {
+      this.slackReporter.postMessage(`v${version}`);
       return;
     }
 
@@ -148,7 +155,7 @@ You can ask me to:
 
   greet() : void {
     console.log('saying hello to ', this.getChannelName());
-    this.slackReporter.postMessage("Hello I'm AQIDuck. Let me tell you about the air quality.");
+    this.slackReporter.postMessage(`Hello I'm AQIDuck (v${version}). Let me tell you about the air quality.`);
   }
 
   onExit() : Promise<void> {
