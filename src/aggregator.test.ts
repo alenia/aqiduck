@@ -1,5 +1,7 @@
-import Aggregator from './aggregator';
+import Aggregator from "./aggregator"
 
+import * as aggregator from "./aggregator"
+import * as sensor from "./interfaces/sensor"
 let outdoorSensorData = {}, indoorSensorData = {};
 
 const outdoorSensor = {
@@ -15,7 +17,7 @@ const indoorSensor = {
   }),
 }
 
-let aggregator: Aggregator;
+let aggregator
 
 beforeEach(() => {
   aggregator = new Aggregator([{ name: "Outdoor", sensor: outdoorSensor}, {name: "Indoor", sensor: indoorSensor}]);
@@ -103,3 +105,92 @@ describe('Aggregator.fromConfig', () => {
     Aggregator.fromConfig(config);
   });
 });
+
+describe("monitorAndNotify", () => {
+    let object: any
+    let inst: any
+
+    beforeEach(() => {
+        object = { 0: { name: "Jean-Philippe", sensor: { sensorId: 12345, getData: () => ({ AQI: 400, AQICategory: "Dwarf Crocodile", AQIColorHex: "Foo bar", temperature: -5.48, error: 500 }) }, AQIThresholds: [12, 987650], AQIMonitoring: sensor.monitoringTypes.static }, 1: { name: "Anas", sensor: { sensorId: "user123", getData: () => ({ AQI: 400, AQICategory: "Nile Crocodile", AQIColorHex: "Foo bar", temperature: -5.48, error: false }) }, AQIThresholds: [987650, 987650], AQIMonitoring: sensor.monitoringTypes.dynamic }, 2: { name: "Jean-Philippe", sensor: { sensorId: "username", getData: () => ({ AQI: 520, AQICategory: "Dwarf Crocodile", AQIColorHex: "Hello, world!", temperature: 1, error: "Message box: foo; bar\n" }) }, AQIThresholds: [56784, "bc23a9d531064583ace8f67dad60f6bb"], AQIMonitoring: sensor.monitoringTypes.category }, 3: { name: "Michael", sensor: { sensorId: 12345, getData: () => ({ AQI: 30, AQICategory: "Spectacled Caiman", AQIColorHex: "foo bar", temperature: 0, error: 500 }) }, AQIThresholds: [12, 987650], AQIMonitoring: sensor.monitoringTypes.static }, 4: { name: "Michael", sensor: { sensorId: 12345, getData: () => ({ AQI: 4, AQICategory: "Spectacled Caiman", AQIColorHex: "foo bar", temperature: -5.48, error: "invalid choice" }) }, AQIThresholds: [12, 56784], AQIMonitoring: sensor.monitoringTypes.static } }
+        inst = new aggregator.default(object)
+    })
+
+    test("0", async () => {
+        await inst.monitorAndNotify()
+    })
+})
+
+describe("showMonitoringConfig", () => {
+    let object: any
+    let inst: any
+
+    beforeEach(() => {
+        object = { 0: { name: "Michael", sensor: { sensorId: 56784, getData: () => ({ AQI: 320, AQICategory: "Nile Crocodile", AQIColorHex: "This is a Text", temperature: -5.48, error: "Message box: foo; bar\n" }) }, AQIThresholds: ["bc23a9d531064583ace8f67dad60f6bb", "bc23a9d531064583ace8f67dad60f6bb"], AQIMonitoring: sensor.monitoringTypes.dynamic } }
+        inst = new aggregator.default(object)
+    })
+
+    test("0", () => {
+        let callFunction: any = () => {
+            inst.showMonitoringConfig()
+        }
+    
+        expect(callFunction).not.toThrow()
+    })
+})
+
+describe("report", () => {
+    let object: any
+    let inst: any
+
+    beforeEach(() => {
+        object = { 0: { name: "Pierre Edouard", sensor: { sensorId: 12, getData: () => ({ AQI: 380, AQICategory: "Nile Crocodile", AQIColorHex: "Hello, world!", temperature: -100, error: "ValueError" }) }, AQIThresholds: ["bc23a9d531064583ace8f67dad60f6bb", 12345], AQIMonitoring: sensor.monitoringTypes.static }, 1: { name: "Michael", sensor: { sensorId: 56784, getData: () => ({ AQI: 1, AQICategory: "Saltwater Crocodile", AQIColorHex: "foo bar", temperature: -5.48, error: 400 }) }, AQIThresholds: [12, 56784], AQIMonitoring: sensor.monitoringTypes.static }, 2: { name: "Michael", sensor: { sensorId: "a1969970175", getData: () => ({ AQI: 350, AQICategory: "Dwarf Crocodile", AQIColorHex: "foo bar", temperature: 1, error: 429 }) }, AQIThresholds: [12345, 12], AQIMonitoring: sensor.monitoringTypes.category }, 3: { name: "Edmond", sensor: { sensorId: "user123", getData: () => ({ AQI: 520, AQICategory: "Australian Freshwater Crocodile", AQIColorHex: "Hello, world!", temperature: -100, error: 400 }) }, AQIThresholds: [12, 56784], AQIMonitoring: sensor.monitoringTypes.dynamic } }
+        inst = new aggregator.default(object)
+    })
+
+    test("0", async () => {
+        await inst.report()
+    })
+})
+
+// @ponicode
+describe("aggregator.default.fromConfig", () => {
+    test("0", () => {
+        let callFunction: any = () => {
+            aggregator.default.fromConfig("This is a Text")
+        }
+    
+        expect(callFunction).not.toThrow()
+    })
+
+    test("1", () => {
+        let callFunction: any = () => {
+            aggregator.default.fromConfig("Foo bar")
+        }
+    
+        expect(callFunction).not.toThrow()
+    })
+
+    test("2", () => {
+        let callFunction: any = () => {
+            aggregator.default.fromConfig("foo bar")
+        }
+    
+        expect(callFunction).not.toThrow()
+    })
+
+    test("3", () => {
+        let callFunction: any = () => {
+            aggregator.default.fromConfig("Hello, world!")
+        }
+    
+        expect(callFunction).not.toThrow()
+    })
+
+    test("4", () => {
+        let callFunction: any = () => {
+            aggregator.default.fromConfig("")
+        }
+    
+        expect(callFunction).not.toThrow()
+    })
+})
