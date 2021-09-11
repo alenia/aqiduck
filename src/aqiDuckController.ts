@@ -49,7 +49,7 @@ export default class AqiDuckController {
         console.log("error getting aggregator notification", this.getChannelName(), error)
       })
     }
-    this.interval = setInterval(monitoringFn, 5000);
+    this.interval = setInterval(monitoringFn, 30000);
   }
 
   postMonitoringStatus() : void {
