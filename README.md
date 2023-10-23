@@ -1,6 +1,9 @@
 # AQIDuck
 ![Logo](assets/aqiduck.jpg)
 
+### NOTE:
+This is very data-intensive because it polls the API too frequently, and doesn't batch requests. If you want to use this I would recommend updating it for the new API calls. I am no longer using it myself. Feel free to branch and enjoy!
+
 ### Purpose:
 
 * Pull data from PurpleAir
